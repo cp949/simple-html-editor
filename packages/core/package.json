@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "build": "vite build && tsc --project tsconfig.build.json && node scripts/write-dist-package.mjs",
     "test": "vitest run --root ../.. packages/core/test",
     "typecheck": "tsc --project tsconfig.json"
   },

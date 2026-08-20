@@ -6,6 +6,15 @@ import { join, resolve } from 'node:path';
 import { assertDistFileSet, checkDist } from './check-dist.mjs';
 
 const requiredFiles = ['index.js', 'index.d.ts', 'styles.css', 'package.json'] as const;
+const coreRequiredFiles = [
+  'empty-document.d.ts',
+  'extensions.d.ts',
+  'html-policy.d.ts',
+  'image-presentation.d.ts',
+  'index.d.ts',
+  'index.js',
+  'package.json',
+] as const;
 
 async function createFixture(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'editor-simple-dist-'));
@@ -38,6 +47,39 @@ async function createValidDistFixture(indexJavaScript: string): Promise<string> 
       }),
     ),
   ]);
+  return directory;
+}
+
+async function createValidCoreDistFixture(): Promise<string> {
+  const directory = await mkdtemp(join(tmpdir(), 'simple-html-editor-core-dist-'));
+  await Promise.all(
+    coreRequiredFiles.map((file) => {
+      if (file === 'package.json') {
+        return writeFile(
+          join(directory, file),
+          JSON.stringify({
+            name: '@cp949/simple-html-editor-core',
+            version: '0.1.0',
+            type: 'module',
+            main: './index.js',
+            types: './index.d.ts',
+            exports: { '.': { types: './index.d.ts', import: './index.js' } },
+            dependencies: { '@tiptap/core': '^3.30.2' },
+            publishConfig: { access: 'public' },
+          }),
+        );
+      }
+
+      if (file === 'index.js') return writeFile(join(directory, file), 'export const value = 1\n');
+      if (file === 'index.d.ts') {
+        return writeFile(
+          join(directory, file),
+          "export { isEditorDocumentEmpty } from './empty-document.js';\n",
+        );
+      }
+      return writeFile(join(directory, file), 'export {};\n');
+    }),
+  );
   return directory;
 }
 
@@ -82,6 +124,31 @@ describe('dist 파일 집합 검사', () => {
       );
     } finally {
       await rm(fixtureDirectory, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('core dist 계약', () => {
+  test('공개 이름, release version과 JavaScript/type export를 제공한다', async () => {
+    const directory = await createValidCoreDistFixture();
+
+    try {
+      await expect(checkDist({ kind: 'core', directory })).resolves.toBeUndefined();
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  test('allowlist 밖의 파일을 거부한다', async () => {
+    const directory = await createValidCoreDistFixture();
+
+    try {
+      await writeFile(join(directory, 'extra.js'), '');
+      await expect(checkDist({ kind: 'core', directory })).rejects.toThrow(
+        'dist 파일 목록이 정확하지 않습니다',
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
     }
   });
 });
