@@ -74,7 +74,7 @@ import {
 
 ## 브라우저 지원
 
-최소 지원 버전과 JavaScript/demo build target은 Chrome 85다. 호환성 검사는 build와 정적 검증에 포함되지만 최신 Playwright Chromium 자동화는 실제 Chrome 85 실행 증거가 아니다. Chrome 85 지원 승인은 대상 애플리케이션에서 별도 Human test가 필요하다. Chrome 82 지원은 향후 별도로 검토한다.
+최소 지원 버전과 JavaScript/demo build target은 Chrome 81이다. 호환성 검사는 build와 정적 검증에 포함되지만 최신 Playwright Chromium 자동화는 실제 Chrome 81 실행 증거가 아니다. Chrome 81 지원 승인은 대상 애플리케이션에서 별도 Human test가 필요하다.
 
 ## 로컬 `dist` 연결
 

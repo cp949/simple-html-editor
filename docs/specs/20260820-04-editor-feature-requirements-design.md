@@ -160,7 +160,7 @@ toolbar는 현재 selection의 활성 서식을 표시하고 실행할 수 없�
 ### 3.12 호환성과 배포 산출물
 
 - React 18.3과 React 19 지원
-- Chrome 85 이상 지원
+- Chrome 81 이상 지원
 - SSR 환경에서 안전한 import
 - ESM JavaScript, TypeScript 선언과 CSS export 제공
 - core 공개 dist는 7파일, React 공개 dist는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일로 구성
@@ -168,7 +168,7 @@ toolbar는 현재 selection의 활성 서식을 표시하고 실행할 수 없�
 - production/full audit의 모든 severity가 0이어야 함
 - 직접·전이·번들 의존성이 승인된 라이선스 allowlist를 통과해야 함
 
-자동화된 최신 Chromium 테스트는 실제 Chrome 85 Human test를 대신하지 않는다.
+자동화된 최신 Chromium 테스트는 실제 Chrome 81 Human test를 대신하지 않는다.
 
 ## 4. 예정 기능
 
@@ -226,7 +226,6 @@ toolbar는 현재 selection의 활성 서식을 표시하고 실행할 수 없�
 - 글자 수와 최대 길이
 - 좁은 화면의 toolbar overflow UI
 - toolbar 키보드 탐색 확장
-- Chrome 82 지원
 
 보류 기능은 Issue를 만들거나 구현을 시작하기 전에 이 문서에서 예정 기능으로 승격해야 한다.
 

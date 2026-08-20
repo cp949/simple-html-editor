@@ -95,7 +95,7 @@ export default defineConfig({
     },
   ],
   build: {
-    target: 'chrome85',
+    target: 'chrome81',
     emptyOutDir: true,
     cssCodeSplit: false,
     lib: {

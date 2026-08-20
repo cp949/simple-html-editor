@@ -372,4 +372,4 @@ async function runRuntimeScenario({ label, peerRoot }) {
 for (const scenario of runtimeScenarios) {
   await runRuntimeScenario(scenario);
 }
-console.log('Chrome 85 runtime 호환성 검사 통과');
+console.log('Chrome 81 runtime 호환성 검사 통과');

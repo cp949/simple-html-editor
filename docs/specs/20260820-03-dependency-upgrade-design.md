@@ -14,7 +14,7 @@
 2. React 18.3과 React 19를 모두 공개 지원하고 각각 실제 소비자 환경에서 검증한다.
 3. 기존 공개 API, HTML round-trip, core dist 7파일·React dist 4파일 계약과 라이선스 allowlist를 유지한다.
 4. 대표 소비자 애플리케이션에서 기존 편집 흐름이 동작한다.
-5. 마지막 단계에서 Chrome 85가 별도 Babel·polyfill 설정 없이 UI 파손과 런타임 오류 없이 동작한다. 일부 optional 기능의 비활성화는 허용한다.
+5. 마지막 단계에서 Chrome 81이 별도 Babel·polyfill 설정 없이 UI 파손과 런타임 오류 없이 동작한다. 일부 optional 기능의 비활성화는 허용한다.
 
 ## 2. 범위
 
@@ -27,8 +27,8 @@
 - React 18·19 소비자 fixture와 runtime 검증
 - production/full audit 명령과 최종 verify 배선
 - dependency 변경에 따른 라이선스 보고서
-- Chrome 85 호환성 분석, 필수 shim 또는 optional 기능의 capability gate
-- 소비자 애플리케이션 smoke와 Chrome 85 Human test 체크리스트
+- Chrome 81 호환성 분석, 필수 shim 또는 optional 기능의 capability gate
+- 소비자 애플리케이션 smoke와 Chrome 81 Human test 체크리스트
 
 ### 제외
 
@@ -99,13 +99,13 @@ React 공개 `.d.ts`에는 React peer 이외에 Tiptap/ProseMirror 구현 타입
 
 라이선스 allowlist는 MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, 0BSD, MPL-2.0과 Biome이 사용하는 정확한 SPDX 식 `MIT OR Apache-2.0`을 유지한다. 그 밖의 복합식을 포함한 이 목록 밖의 추가와 suppression은 하지 않는다. bundle module evidence, full pnpm graph와 lockfile을 다시 생성·검사한다.
 
-## 7. Chrome 85 최종 단계
+## 7. Chrome 81 최종 단계
 
-Chrome 85 작업은 최신 dependency 전환, 현대 브라우저 검증, React 이중 검증과 audit 0 이후 마지막에 수행한다. 최종 `verify`에는 Chrome 85 게이트를 포함하므로 완료 기준에서 제외하지 않는다. Chrome 82 지원은 향후 별도로 검토한다.
+Chrome 81 작업은 최신 dependency 전환, 현대 브라우저 검증, React 이중 검증과 audit 0 이후 마지막에 수행한다. 최종 `verify`에는 Chrome 81 게이트를 포함하므로 완료 기준에서 제외하지 않는다.
 
 지원 책임은 라이브러리에 있다. 사용처가 library code를 Babel/SWC로 다시 변환하거나 별도 polyfill을 설치한다는 가정은 하지 않는다. 번들에 포함된 Tiptap/ProseMirror 코드도 같은 책임 범위다.
 
-Chrome 85의 필수 동작은 다음과 같다.
+Chrome 81의 필수 동작은 다음과 같다.
 
 - editor mount와 기존 HTML 표시
 - UI 레이아웃 유지
@@ -115,13 +115,13 @@ Chrome 85의 필수 동작은 다음과 같다.
 
 처리 우선순위는 다음과 같다.
 
-1. 최신 bundle에서 Chrome 85에 없는 문법, built-in, DOM API와 CSS를 실제 실행 경로 기준으로 식별한다.
-2. library 내부 사용이면 Chrome 85 호환 구현으로 교체한다.
+1. 최신 bundle에서 Chrome 81에 없는 문법, built-in, DOM API와 CSS를 실제 실행 경로 기준으로 식별한다.
+2. library 내부 사용이면 Chrome 81 호환 구현으로 교체한다.
 3. editor 시작과 기본 편집에 필수면 전역 오염이 없는 내부 helper나 최소 shim으로 보호한다.
 4. optional 기능이면 capability detection 후 해당 control을 disabled 처리하고 이유를 제공한다.
 5. 전역 prototype 수정은 제거를 우선한다. 불가피하면 대안이 없다는 근거와 native/부재 환경 회귀 테스트가 필요하다.
 
-자동 게이트는 `target: chrome85`, 최종 ES2019 syntax 변환, 필요한 built-in/DOM API가 없는 환경의 runtime smoke를 포함한다. 자동 모사는 실제 layout을 증명하지 못하므로 실제 Chrome 85 human smoke에서 UI 파손과 오류를 최종 확인한다.
+자동 게이트는 `target: chrome81`, 최종 ES2019 syntax 변환, 필요한 built-in/DOM API가 없는 환경의 runtime smoke를 포함한다. 자동 모사는 실제 layout을 증명하지 못하므로 실제 Chrome 81 human smoke에서 UI 파손과 오류를 최종 확인한다.
 
 ## 8. 검증 순서
 
@@ -137,11 +137,11 @@ Chrome 85의 필수 동작은 다음과 같다.
 8. production/full audit 0
 9. 최신 Chromium Playwright
 10. 소비자 애플리케이션 smoke. 기존 local link가 새 dist를 해석할 수 있을 때만 해당 working tree를 읽기 전용으로 실행한다. dependency 경로 교체가 필요하면 소비자 애플리케이션을 임의 수정하지 않고 별도 승인을 요청하거나 isolated copy를 사용한다.
-11. Chrome 85 compatibility 구현과 자동 runtime smoke
-12. 실제 Chrome 85 human smoke
+11. Chrome 81 compatibility 구현과 자동 runtime smoke
+12. 실제 Chrome 81 human smoke
 13. frozen-lockfile 재설치 후 최종 `pnpm verify`
 
-최종 검증은 현재의 build, typecheck, test, gate test, boundary, dist, license, production/full audit을 모두 포함하고 React 18·19와 Chrome 85 게이트를 추가한다. Node 20에서 실패하는 `scripts/test/**/*.test.mjs` glob은 Node 22 환경에서도 shell 확장에 의존하지 않도록 실제 파일 집합을 명시하는 방식으로 바로잡는다.
+최종 검증은 현재의 build, typecheck, test, gate test, boundary, dist, license, production/full audit을 모두 포함하고 React 18·19와 Chrome 81 게이트를 추가한다. Node 20에서 실패하는 `scripts/test/**/*.test.mjs` glob은 Node 22 환경에서도 shell 확장에 의존하지 않도록 실제 파일 집합을 명시하는 방식으로 바로잡는다.
 
 ## 9. 실패 처리와 완료 판정
 
@@ -155,10 +155,10 @@ Chrome 85의 필수 동작은 다음과 같다.
 - React 18·19 fixture 성공
 - core dist 정확히 7파일, React dist 정확히 4파일과 public declaration boundary 유지
 - 소비자 애플리케이션의 기본 편집 흐름 확인
-- Chrome 85 자동 smoke와 human smoke 통과
+- Chrome 81 자동 smoke와 human smoke 통과
 - 최종 Git diff와 status 확인
 
-Chrome 85.0.4182에서 Human test의 조회 → 편집 → 저장 → 재조회가 통과했다. Chrome 81.0.4032.0에서 소비자 애플리케이션의 홈 화면이 표시되지 않은 관찰은 지원 범위 밖이며 simple-html-editor 원인으로 확정하지 않는다.
+Chrome 85.0.4182에서 Human test의 조회 → 편집 → 저장 → 재조회가 통과했다. Chrome 81.0.4032.0에서 발견한 `react-dom_client.js`의 `??=` 구문 오류는 Chrome 81 target과 실제 dev·production bundle syntax gate로 회귀 방지한다. 수정 후 같은 Chrome 81.0.4032.0에서 demo가 오류 없이 정상 동작했다.
 
 ## 10. 참고 프로젝트
 
@@ -171,6 +171,6 @@ Chrome 85.0.4182에서 Human test의 조회 → 편집 → 저장 → 재조회�
 
 위험도: 중간
 
-주요 위험은 여러 major upgrade의 실패 원인이 한 diff에 겹치는 것, React peer 중복, 최신 Tiptap의 Chrome 85 미지원 API, audit 또는 라이선스 정책과 최신 dependency의 충돌이다.
+주요 위험은 여러 major upgrade의 실패 원인이 한 diff에 겹치는 것, React peer 중복, 최신 Tiptap의 Chrome 81 미지원 API, audit 또는 라이선스 정책과 최신 dependency의 충돌이다.
 
 롤백: 구현 전 commit `470387427a2570f55787726ee421be2aed39ac68`로 변경 전 상태를 식별할 수 있다. 작업 중에는 사용자 파일을 되돌리지 않고 이번 변경 파일만 대상으로 복구한다. commit, push, publish와 배포는 별도 승인 없이는 수행하지 않는다.

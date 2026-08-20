@@ -28,7 +28,7 @@
 - Quill은 이미지, 정렬, 전경색, 배경색 등의 toolbar를 사용한다.
 - 일부 저장 흐름은 HTML에 포함된 data URL 이미지를 파일로 변환한다.
 
-소비자 호환성을 위해 React 18을 지원한다. 공식 브라우저 하한은 Chrome 85로 정한다. Chrome 82 지원은 향후 별도로 검토한다. Chrome 81.0.4032.0에서 소비자 애플리케이션의 홈 화면이 표시되지 않은 관찰은 지원 범위 밖이며 simple-html-editor 원인으로 확정하지 않는다.
+소비자 호환성을 위해 React 18을 지원한다. 공식 브라우저 하한은 Chrome 81로 정한다.
 
 ## 3. 범위
 
@@ -49,7 +49,7 @@
 - 표 삽입과 셀 내용 편집
 - 표의 행·열 추가·삭제와 표 삭제
 - 안전하지 않거나 지원하지 않는 외부 HTML의 정규화
-- Chrome 85 대상 빌드
+- Chrome 81 대상 빌드
 - 로컬 `dist` 직접 연결
 - production dependency audit와 라이선스 검사
 - 소비자 애플리케이션에 연결한 Human test
@@ -64,7 +64,7 @@
 - 외부 HTML 문자열의 바이트 단위 보존
 - CKEditor 또는 Quill 인스턴스 인터페이스 호환
 - npm registry 배포 자동화
-- Chrome 81 이하 지원
+- Chrome 80 이하 지원
 
 ## 4. 저장소 구조
 
@@ -132,7 +132,7 @@ React UI를 제공하는 공개 `@cp949/simple-html-editor-react` 패키지다.
 - JavaScript와 타입 선언 export
 - CSS export
 - SSR import 안전성
-- Chrome 85 빌드 target
+- Chrome 81 빌드 target
 
 ## 5. 공개 인터페이스
 
@@ -233,7 +233,7 @@ Tiptap의 TextStyle과 Color extension으로 글자색을 표현한다.
 
 - peer 범위는 React 18을 포함한다.
 - 각 공개 패키지의 선언된 runtime dependency와 peer dependency는 bundle에서 external로 유지한다.
-- 출력 target은 Chrome 85다.
+- 출력 target은 Chrome 81이다.
 - core는 ESM JavaScript, 선언 5개와 소비용 `package.json`의 7파일을 `packages/core/dist`에 생성한다.
 - React는 ESM JavaScript, `.d.ts`, CSS와 소비용 `package.json`의 4파일을 `packages/react/dist`에 생성한다.
 - 두 package export는 루트 JavaScript와 타입을 제공하고 React만 `./styles.css`를 추가 제공한다.
@@ -286,7 +286,7 @@ CSS는 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/
 8. 남은 CKEditor·Quill import와 package dependency를 모두 검색한다.
 9. CKEditor와 Quill 의존성을 제거한다.
 10. 소비자의 typecheck, format과 대상 빌드를 실행한다.
-11. Chrome 85 이상에서 서버 HTML 조회·편집·저장·재조회 Human test를 수행한다.
+11. Chrome 81 이상에서 서버 HTML 조회·편집·저장·재조회 Human test를 수행한다.
 12. audit와 라이선스 결과를 교체 전후로 비교한다.
 
 소비자의 서버 인터페이스와 저장 로직은 변경하지 않는다. 저장되는 HTML 구조가 정규화될 수 있으므로 기존 콘텐츠와 새 출력의 시각적·의미적 동등성을 Human test에서 확인한다.
@@ -319,7 +319,7 @@ CSS는 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/
 - fresh `dist`의 export·타입·CSS 검증
 - React 18 consumer typecheck와 build
 - SSR import 검증
-- ES2019 정적 syntax 검사와 Chrome 85 대상 transpilation 설정 검사
+- ES2019 정적 syntax 검사와 Chrome 81 대상 transpilation 설정 검사
 - demo에서 로드→편집→저장→재로드 흐름
 - audit, 라이선스와 package boundary 검사
 
@@ -330,8 +330,9 @@ CSS는 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/
 - 텍스트 서식, 글자색, 링크, 이미지와 표를 편집한다.
 - 저장 후 새로고침하여 서버 HTML을 다시 불러온다.
 - 빈 문서 validation과 외부 focus 요청을 확인한다.
-- 실제 Chrome 85 환경에서 주요 흐름을 확인한다. 자동화된 최신 Chromium 결과를 Chrome 85 검증으로 대신하지 않는다.
+- 실제 Chrome 81 환경에서 주요 흐름을 확인한다. 자동화된 최신 Chromium 결과를 Chrome 81 검증으로 대신하지 않는다.
 - Chrome 85.0.4182에서 소비자 애플리케이션의 조회 → 편집 → 저장 → 재조회가 성공했다.
+- Chrome 81.0.4032.0에서 demo가 오류 없이 정상 동작했다.
 
 ## 16. 오류 처리
 
@@ -346,7 +347,7 @@ CSS는 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/
 
 - 모노리포 package boundary가 검사로 고정되어 있다.
 - 공개 인터페이스에 Tiptap·ProseMirror 타입이 노출되지 않는다.
-- React 18 consumer와 Chrome 85 target 검증이 통과한다.
+- React 18 consumer와 Chrome 81 target 검증이 통과한다.
 - 제공된 외부 HTML과 consumer fixture가 기대한 의미로 왕복된다.
 - toolbar, 글자색, 이미지와 기본 표 편집이 동작한다.
 - fresh `dist`를 소비자 애플리케이션에서 직접 연결할 수 있다.

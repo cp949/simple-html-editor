@@ -20,7 +20,7 @@
 - React 공개 타입에 Tiptap과 ProseMirror 타입을 노출하지 않는다.
 - 저장 결과는 정규화 HTML이며 편집기 DOM이나 별도 이미지 상태를 저장하지 않는다.
 - `readOnly`에서는 모든 문서 변경 control과 이미지 상호작용을 차단한다.
-- React 18.3과 React 19, Chrome 85 이상, SSR-safe import를 유지한다.
+- React 18.3과 React 19, Chrome 81 이상, SSR-safe import를 유지한다.
 - core 공개 `dist`는 7파일, React 공개 `dist`는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일만 포함한다.
 - React와 ReactDOM만 peer dependency로 노출한다.
 - production/full audit의 모든 severity 0과 승인된 라이선스 allowlist를 유지한다.
@@ -98,7 +98,7 @@ type ImagePresentation = {
 - 저장 HTML과 resize NodeView DOM을 분리하고 각 책임을 정한다.
 - 이미지 선택, resize handle 표시, pointer lifecycle, 편집 영역 clamp와 `readOnly` 전환 규칙을 정한다.
 - 이미지 정렬 command, 활성 상태와 disabled 상태의 내부 interface를 정한다.
-- Chrome 85, SSR, HTML 안전성, unit/integration/E2E/Human test 기준을 정한다.
+- Chrome 81, SSR, HTML 안전성, unit/integration/E2E/Human test 기준을 정한다.
 
 **완료 조건:**
 
@@ -189,34 +189,19 @@ type ImagePresentation = {
 - command, selection 유지, pressed와 disabled 동작이 아이콘 전환 전과 같다.
 - package boundary, core dist 7파일·React dist 4파일, bundle evidence, 라이선스와 production/full audit 검사가 통과한다.
 
-### R7. 예정 기능 통합 검증
+### R7. 제품 계약 승격
 
-**목표:** R1~R6 결과가 기존 필수 기능과 배포 계약을 회귀시키지 않았다는 증거를 만든다.
+**목표:** 최종 Human test와 사용자 승인 결과를 제품 기능 계약에 반영한다.
 
-**선행 작업:** R1~R6
-
-**범위:**
-
-- demo에서 이미지 resize, 이미지 정렬과 최종 toolbar의 대표 흐름을 확인한다.
-- 최신 Chromium 자동 E2E와 실제 Chrome 85 Human test 결과를 구분해 기록한다.
-- React 18.3·React 19 소비자, SSR import, fresh dist와 기존 HTML fixture를 재검증한다.
-- production/full audit와 라이선스 보고서를 최종 dependency graph에서 다시 생성한다.
-
-**완료 조건:**
-
-- `pnpm verify`와 `pnpm exec playwright test`가 통과한다.
-- `pnpm demo`에서 조회 → 편집 → resize/정렬 → 저장 → 재조회 흐름이 확인된다.
-- 실제 Chrome 85 Human test에서 UI 파손, console error와 uncaught error가 없다.
-- `docs/reviews/20260820-04-editor-feature-requirements-review.md`에 자동 검증과 Human test 증거가 구분되어 기록된다.
-
-### R8. 제품 계약 승격
-
-**목표:** 검증과 사용자 승인 결과를 제품 기능 계약에 반영한다.
-
-**선행 작업:** R7과 사용자 승인
+**선행 작업:** R6
 
 **범위:**
 
+- R6 완료 시점의 자동 검증 결과와 최종 tree가 같은지 확인한다. 코드, dependency 또는 lockfile이 바뀌었다면 관련 자동 검증을 다시 실행한다.
+- `pnpm demo`에서 조회 → 편집 → resize/정렬 → 저장 → 재조회 흐름을 확인한다.
+- 실제 Chrome 81에서 UI 파손, console error와 uncaught error가 없는지 Human test한다.
+- 자동 검증과 Human test 증거를 `docs/reviews/20260820-04-editor-feature-requirements-review.md`에 구분해 기록한다.
+- 검증 결과에 대해 사용자 승인을 받는다.
 - 승인된 항목만 제품 기능 계약에서 `예정`에서 `필수`로 이동한다.
 - `pnpm demo` 개발 지원 항목의 상태를 실제 결과에 맞게 갱신한다.
 - 각 GitHub Issue에 최종 검증 증거를 연결하고 완료된 Issue를 종료한다.
@@ -224,6 +209,7 @@ type ImagePresentation = {
 
 **완료 조건:**
 
+- 통합 demo 흐름과 실제 Chrome 81 Human test가 통과한다.
 - 제품 기능 계약, review 증거와 GitHub Issue 상태가 서로 모순되지 않는다.
 - 구현 완료와 제품 계약 승격이 별도 승인 단계로 남아 있다.
 
@@ -236,15 +222,14 @@ R1 demo 실행 경로
       → R4 이미지 drag resize
         → R5 이미지 가로 정렬
           → R6 Lucide toolbar 아이콘
-            → R7 예정 기능 통합 검증
-              → R8 제품 계약 승격
+            → R7 제품 계약 승격
 ```
 
 R1과 R6은 기술적으로 이미지 schema와 독립적이지만, 이 순서는 검증 기반을 먼저 만들고 최종 toolbar control 집합이 확정된 뒤 아이콘을 한 번만 적용하기 위한 실행 순서다. R4와 R5는 같은 image node와 NodeView adapter를 변경하므로 병렬 구현하지 않는다.
 
 ## 6. Issue와 plan 생성 규칙
 
-- R1~R8은 각각 별도 GitHub Issue로 생성한다.
+- R1~R7은 각각 별도 GitHub Issue로 생성한다.
 - Issue는 이 문서의 작업 ID와 관련 spec 절을 링크하고 acceptance criteria만 요약한다.
 - native issue dependency로 이 문서 5장의 차단 관계를 등록한다.
 - 구현 Issue를 시작할 때 관련 승인 spec과 같은 날짜·번호·topic을 공유하는 `docs/plans/` 문서를 작성한다.

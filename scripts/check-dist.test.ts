@@ -202,5 +202,5 @@ test('React 18과 React 19 소비자에서 dist runtime을 검사한다', () => 
   expect(result.status).toBe(0);
   expect(result.stdout).toContain('React 18 dist runtime 호환성 검사 통과');
   expect(result.stdout).toContain('React 19 dist runtime 호환성 검사 통과');
-  expect(result.stdout).toContain('Chrome 85 runtime 호환성 검사 통과');
+  expect(result.stdout).toContain('Chrome 81 runtime 호환성 검사 통과');
 });

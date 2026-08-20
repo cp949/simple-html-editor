@@ -3,7 +3,14 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    target: 'chrome85',
+    target: 'chrome81',
+  },
+  optimizeDeps: {
+    rolldownOptions: {
+      transform: {
+        target: 'chrome81',
+      },
+    },
   },
   test: {
     environment: 'happy-dom',

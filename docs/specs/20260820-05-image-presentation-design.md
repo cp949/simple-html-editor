@@ -28,7 +28,7 @@ React interface에는 포함하지 않는다. `HtmlEditor`, `HtmlEditorProps`와
 - 편집 영역 너비 clamp와 원본 가로세로 비율 유지
 - 이미지 가로 정렬 command, active와 disabled 상태
 - 초기 및 동적 `readOnly` 처리
-- SSR-safe import, Chrome 85, React 18.3과 React 19 제약
+- SSR-safe import, Chrome 81, React 18.3과 React 19 제약
 - R3, R4와 R5의 자동 검증 및 Human test 책임
 
 ### 제외
@@ -41,7 +41,7 @@ React interface에는 포함하지 않는다. `HtmlEditor`, `HtmlEditorProps`와
 - 높이 변경, 비율 해제와 편집 영역 밖 resize
 - 양쪽 정렬과 임의 CSS 보존
 - 공개 toolbar 구성 interface
-- Chrome 82 이하 지원
+- Chrome 80 이하 지원
 
 ## 3. ImagePresentation 계약
 
@@ -324,8 +324,8 @@ unmount 후에는 pointer event, image load/error와 React state update가 문�
 - DOM 접근은 NodeView mount, effect 또는 event handler 안에서만 수행한다.
 - SSR import는 NodeView를 mount하지 않고 성공해야 한다.
 - React NodeView는 React 18.3과 React 19에서 같은 lifecycle과 cleanup을 제공해야 한다.
-- 구현은 Chrome 85가 지원하는 Pointer Events와 pointer capture만 사용한다.
-- `Array.prototype.at`, `findLast`처럼 Chrome 85에 없는 built-in을 새 실행 경로에 사용하지
+- 구현은 Chrome 81이 지원하는 Pointer Events와 pointer capture만 사용한다.
+- `Array.prototype.at`, `findLast`처럼 Chrome 81에 없는 built-in을 새 실행 경로에 사용하지
   않는다.
 - `ResizeObserver` 또는 새로운 CSS 기능을 필수 계약으로 두지 않는다. 편집 영역 너비는
   pointer event 시점에 DOM layout에서 측정한다.
@@ -390,10 +390,10 @@ capture만 제어 가능한 test adapter로 대체한다. 다음을 검증한다
 ### 공통 package와 Human test
 
 R3~R5는 각 범위의 unit/integration test 외에 typecheck, package boundary와 SSR import를
-유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh core dist 7파일·React dist 4파일과 Chrome 85 target
+유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh core dist 7파일·React dist 4파일과 Chrome 81 target
 gate를 실행한다.
 
-실제 Chrome 85 Human test는 자동화된 최신 Chromium E2E와 구분해 기록한다. 대표 흐름은
+실제 Chrome 81 Human test는 자동화된 최신 Chromium E2E와 구분해 기록한다. 대표 흐름은
 이미지 조회 → 선택 → 확대·축소 → 세 가로 정렬 → 저장 → 재조회다. 이미지가 편집 영역을
 넘지 않고 원본 비율을 유지하며 console error와 uncaught error가 없어야 한다.
 
@@ -434,7 +434,7 @@ interface에서 알아야 한다. 공개 interface 제한과 정규화 HTML 단�
 
 주요 위험은 NodeView의 editor DOM이 저장 HTML로 누출되는 것, pointer 종료 경쟁으로 늦은
 transaction이 발생하는 것, image 정렬과 기존 문단 정렬 상태가 섞이는 것, layout을 모사한
-integration test가 실제 Chrome 85 동작을 과대평가하는 것이다.
+integration test가 실제 Chrome 81 동작을 과대평가하는 것이다.
 
 롤백: R3, R4와 R5를 별도 commit으로 유지하면 마지막 승인 작업의 commit을 되돌려 이전
 단계로 복구할 수 있다. 저장 HTML은 wrapper 없이 `<img>`를 유지하므로 R4 또는 R5 UI를
