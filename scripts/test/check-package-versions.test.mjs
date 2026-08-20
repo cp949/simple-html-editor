@@ -101,7 +101,7 @@ test('source package의 publish guard 누락을 거부한다', async () => {
 });
 
 test('누락되거나 유효하지 않은 release version을 거부한다', async () => {
-  for (const rootVersion of [null, 'release-1']) {
+  for (const rootVersion of [null, 'release-1', '1.0.0-01']) {
     await withWorkspace({ rootVersion }, ({ status, stderr }) => {
       assert.notEqual(status, 0);
       assert.match(stderr, /root release version must be valid SemVer/);
