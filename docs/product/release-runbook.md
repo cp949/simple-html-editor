@@ -51,9 +51,37 @@ version을 올릴 때는 세 `package.json`의 `version`을 함께 수정하고 
 배포 단위는 source workspace가 아니라 build 산출물 디렉터리다. source에서 `npm publish`를 실행하면 `scripts/block-source-publish.mjs`가 차단한다.
 
 ```bash
-npm publish packages/core/dist --access public
+pnpm publish:npm
+```
+
+이 명령은 다음을 순서대로 수행한다.
+
+1. 루트와 두 공개 package version 일치 확인
+2. 작업 트리가 깨끗한지 확인
+3. `pnpm verify` 실행
+4. core OTP 입력 후 `npm publish packages/core/dist --access public`
+5. registry에서 core version 확인 (최대 5회, 3초 간격)
+6. React OTP 입력 후 `npm publish packages/react/dist --access public`
+7. registry에서 React version과 core exact dependency 확인
+
+계정에 2FA가 걸려 있으면 npm이 `EOTP`로 거부한다. OTP는 약 30초 후 만료되고 조작마다 새 코드가 필요할 수 있으므로 이 명령은 검증이 끝난 뒤 publish 직전에 매번 코드를 입력받는다. 2FA를 쓰지 않으면 입력 없이 Enter를 누른다.
+
+옵션은 `--` 뒤에 전달한다.
+
+```bash
+pnpm publish:npm -- --dry-run       # 두 패키지 dry-run만 실행
+pnpm publish:npm -- --skip-verify   # 직전에 pnpm verify를 통과한 경우
+pnpm publish:npm -- --otp=123456    # 비대화형 환경에서 코드 직접 전달
+```
+
+`--otp`는 두 publish에 같은 코드를 사용한다. npm이 재사용을 거부하면 대화형 입력을 사용한다.
+
+수동으로 실행하려면 같은 순서를 지킨다.
+
+```bash
+npm publish packages/core/dist --access public --otp=<코드>
 npm view @cp949/simple-html-editor-core@<version> version
-npm publish packages/react/dist --access public
+npm publish packages/react/dist --access public --otp=<새코드>
 ```
 
 ## 6. 배포 후 확인
@@ -69,7 +97,7 @@ React의 `dependencies["@cp949/simple-html-editor-core"]`가 범위 없는 같�
 
 npm은 두 패키지 publish를 하나의 원자적 transaction으로 제공하지 않는다.
 
-- core 배포 후 React 배포가 실패하면 core version을 제거하거나 다른 version으로 바꾸지 않고 같은 version의 React 배포를 재시도한다.
+- core 배포 후 React 배포가 실패하면 core version을 제거하거나 다른 version으로 바꾸지 않고 같은 version의 React 배포를 재시도한다. `pnpm publish:npm`은 이 상황에서 재시도 명령을 출력하고 중단한다.
 - 같은 version으로 완료할 수 없는 결함이면 두 패키지에 다음 version을 발급해 함께 배포하고 불완전한 version을 deprecate한다.
 
 위험도: 중간

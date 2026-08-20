@@ -34,6 +34,7 @@
     "check:licenses": "node scripts/check-licenses.mjs",
     "audit:prod": "node scripts/check-audit.mjs --prod",
     "audit:full": "node scripts/check-audit.mjs --full",
+    "publish:npm": "node scripts/publish-packages.mjs",
     "verify": "pnpm check:biome && pnpm build && pnpm typecheck && pnpm test && pnpm check:gate-tests && pnpm check:versions && pnpm check:boundaries && pnpm check:dist && pnpm check:packages && pnpm check:licenses && pnpm audit:prod && pnpm audit:full"
   },
   "devDependencies": {
