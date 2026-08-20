@@ -234,10 +234,12 @@ Tiptap의 TextStyle과 Color extension으로 글자색을 표현한다.
 - peer 범위는 React 18을 포함한다.
 - 각 공개 패키지의 선언된 runtime dependency와 peer dependency는 bundle에서 external로 유지한다.
 - 출력 target은 Chrome 81이다.
-- core는 ESM JavaScript, 선언 5개와 소비용 `package.json`의 7파일을 `packages/core/dist`에 생성한다.
-- React는 ESM JavaScript, `.d.ts`, CSS와 소비용 `package.json`의 4파일을 `packages/react/dist`에 생성한다.
+- core는 ESM JavaScript, 선언 5개, 소비용 `package.json`, `README.md`와 `LICENSE`의 9파일을 `packages/core/dist`에 생성한다.
+- React는 ESM JavaScript, `.d.ts`, CSS, 소비용 `package.json`, `README.md`와 `LICENSE`의 6파일을 `packages/react/dist`에 생성한다.
 - 두 package export는 루트 JavaScript와 타입을 제공하고 React만 `./styles.css`를 추가 제공한다.
 - bundle에 포함된 모든 제3자 코드는 라이선스 보고서에 기록한다.
+
+공개 `dist`의 파일 목록은 [저장소와 패키지 README 분리 설계](./20260821-03-package-readme-design.md)와 [공개 패키지 라이선스 설계](./20260821-04-package-license-design.md)를 따른다.
 
 번들된 의존성을 공개 `dependencies`에서 숨겨 audit 결과만 깨끗하게 보이게 하는 방식은 사용하지 않는다. build-time dependency graph와 번들 구성요소를 모두 검사하고 기록한다.
 

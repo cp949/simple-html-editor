@@ -12,7 +12,7 @@
 
 1. production dependency graph와 full dependency graph의 audit 결과가 모든 severity에서 0건이다.
 2. React 18.3과 React 19를 모두 공개 지원하고 각각 실제 소비자 환경에서 검증한다.
-3. 기존 공개 API, HTML round-trip, core dist 7파일·React dist 4파일 계약과 라이선스 allowlist를 유지한다.
+3. 기존 공개 API, HTML round-trip, core dist 9파일·React dist 6파일 계약과 라이선스 allowlist를 유지한다.
 4. 대표 소비자 애플리케이션에서 기존 편집 흐름이 동작한다.
 5. 마지막 단계에서 Chrome 81이 별도 Babel·polyfill 설정 없이 UI 파손과 런타임 오류 없이 동작한다. 일부 optional 기능의 비활성화는 허용한다.
 
@@ -153,7 +153,7 @@ Chrome 81의 필수 동작은 다음과 같다.
 - `pnpm verify` 성공
 - production/full audit의 info 포함 모든 severity 0
 - React 18·19 fixture 성공
-- core dist 정확히 7파일, React dist 정확히 4파일과 public declaration boundary 유지
+- core dist 정확히 9파일, React dist 정확히 6파일과 public declaration boundary 유지
 - 소비자 애플리케이션의 기본 편집 흐름 확인
 - Chrome 81 자동 smoke와 human smoke 통과
 - 최종 Git diff와 status 확인

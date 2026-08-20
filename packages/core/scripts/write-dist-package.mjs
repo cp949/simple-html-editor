@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const rootDirectory = resolve(import.meta.dirname, '../../..');
@@ -39,6 +39,7 @@ await writeFile(
       name: '@cp949/simple-html-editor-core',
       version: rootManifest.version,
       type: 'module',
+      license: 'MIT',
       main: './index.js',
       types: './index.d.ts',
       exports: { '.': { types: './index.d.ts', import: './index.js' } },
@@ -49,3 +50,10 @@ await writeFile(
     2,
   )}\n`,
 );
+
+// npm 패키지 페이지에 표시할 README와 라이선스 전문을 배포 산출물에 포함한다.
+await copyFile(
+  resolve(rootDirectory, 'packages/core/README.md'),
+  resolve(distDirectory, 'README.md'),
+);
+await copyFile(resolve(rootDirectory, 'LICENSE'), resolve(distDirectory, 'LICENSE'));

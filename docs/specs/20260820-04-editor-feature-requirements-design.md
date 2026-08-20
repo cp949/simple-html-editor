@@ -163,7 +163,7 @@ toolbar는 현재 selection의 활성 서식을 표시하고 실행할 수 없�
 - Chrome 81 이상 지원
 - SSR 환경에서 안전한 import
 - ESM JavaScript, TypeScript 선언과 CSS export 제공
-- core 공개 dist는 7파일, React 공개 dist는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일로 구성
+- core 공개 dist는 9파일, React 공개 dist는 `index.js`, `index.d.ts`, `styles.css`, `package.json`, `README.md`, `LICENSE` 여섯 파일로 구성
 - React와 ReactDOM만 peer dependency로 노출
 - production/full audit의 모든 severity가 0이어야 함
 - 직접·전이·번들 의존성이 승인된 라이선스 allowlist를 통과해야 함

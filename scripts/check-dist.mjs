@@ -20,12 +20,14 @@ const contracts = {
       'index.d.ts',
       'index.js',
       'package.json',
+      'README.md',
+      'LICENSE',
     ],
   },
   react: {
     directory: join(rootDirectory, 'packages/react/dist'),
     name: '@cp949/simple-html-editor-react',
-    requiredFiles: ['index.js', 'index.d.ts', 'styles.css', 'package.json'],
+    requiredFiles: ['index.js', 'index.d.ts', 'styles.css', 'package.json', 'README.md', 'LICENSE'],
   },
 };
 
@@ -125,6 +127,7 @@ async function assertPackageMetadata(directory, kind) {
     name: contract.name,
     version: releaseVersion,
     type: 'module',
+    license: 'MIT',
     main: './index.js',
     types: './index.d.ts',
   };

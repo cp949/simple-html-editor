@@ -15,6 +15,8 @@ test('React pack allowlist 밖의 파일을 거부한다', () => {
         'index.d.ts',
         'styles.css',
         'package.json',
+        'README.md',
+        'LICENSE',
         'src.ts',
       ]),
     /unexpected packed file: src\.ts/,
@@ -38,10 +40,19 @@ test('정확한 core와 React pack file set을 허용한다', () => {
       'index.d.ts',
       'index.js',
       'package.json',
+      'README.md',
+      'LICENSE',
     ]),
   );
   assert.doesNotThrow(() =>
-    assertPackedFiles('react', ['index.d.ts', 'index.js', 'package.json', 'styles.css']),
+    assertPackedFiles('react', [
+      'index.d.ts',
+      'index.js',
+      'package.json',
+      'README.md',
+      'LICENSE',
+      'styles.css',
+    ]),
   );
 });
 

@@ -16,12 +16,14 @@ const packageContracts = {
       'index.d.ts',
       'index.js',
       'package.json',
+      'README.md',
+      'LICENSE',
     ],
     name: '@cp949/simple-html-editor-core',
   },
   react: {
     directory: path.join(workspaceRoot, 'packages/react/dist'),
-    files: ['index.d.ts', 'index.js', 'package.json', 'styles.css'],
+    files: ['index.d.ts', 'index.js', 'package.json', 'README.md', 'LICENSE', 'styles.css'],
     name: '@cp949/simple-html-editor-react',
   },
 };

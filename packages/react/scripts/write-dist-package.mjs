@@ -1,4 +1,4 @@
-import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const rootDirectory = resolve(import.meta.dirname, '../../..');
@@ -30,6 +30,7 @@ const packageJson = {
   name: '@cp949/simple-html-editor-react',
   version: rootManifest.version,
   type: 'module',
+  license: 'MIT',
   main: './index.js',
   types: './index.d.ts',
   exports: {
@@ -71,3 +72,10 @@ await writeFile(
   resolve(distDirectory, 'package.json'),
   `${JSON.stringify(packageJson, null, 2)}\n`,
 );
+
+// npm 패키지 페이지에 표시할 README와 라이선스 전문을 배포 산출물에 포함한다.
+await copyFile(
+  resolve(rootDirectory, 'packages/react/README.md'),
+  resolve(distDirectory, 'README.md'),
+);
+await copyFile(resolve(rootDirectory, 'LICENSE'), resolve(distDirectory, 'LICENSE'));

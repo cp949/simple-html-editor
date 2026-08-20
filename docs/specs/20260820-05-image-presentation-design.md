@@ -390,7 +390,7 @@ capture만 제어 가능한 test adapter로 대체한다. 다음을 검증한다
 ### 공통 package와 Human test
 
 R3~R5는 각 범위의 unit/integration test 외에 typecheck, package boundary와 SSR import를
-유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh core dist 7파일·React dist 4파일과 Chrome 81 target
+유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh core dist 9파일·React dist 6파일과 Chrome 81 target
 gate를 실행한다.
 
 실제 Chrome 81 Human test는 자동화된 최신 Chromium E2E와 구분해 기록한다. 대표 흐름은

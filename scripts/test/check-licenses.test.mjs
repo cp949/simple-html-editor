@@ -309,9 +309,18 @@ test('실제 build가 두 공개 package의 dist 밖에 bundle evidence를 생�
   assert.equal(build.status, 0, build.stderr);
 
   const distFiles = (await readdir(path.resolve('packages/react/dist'))).sort();
-  assert.deepEqual(distFiles, ['index.d.ts', 'index.js', 'package.json', 'styles.css']);
+  assert.deepEqual(distFiles, [
+    'LICENSE',
+    'README.md',
+    'index.d.ts',
+    'index.js',
+    'package.json',
+    'styles.css',
+  ]);
   const coreDistFiles = (await readdir(path.resolve('packages/core/dist'))).sort();
   assert.deepEqual(coreDistFiles, [
+    'LICENSE',
+    'README.md',
     'empty-document.d.ts',
     'extensions.d.ts',
     'html-policy.d.ts',

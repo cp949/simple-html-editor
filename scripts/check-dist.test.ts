@@ -5,7 +5,14 @@ import { join, resolve } from 'node:path';
 
 import { assertDistFileSet, assertReactBundleBoundary, checkDist } from './check-dist.mjs';
 
-const requiredFiles = ['index.js', 'index.d.ts', 'styles.css', 'package.json'] as const;
+const requiredFiles = [
+  'index.js',
+  'index.d.ts',
+  'styles.css',
+  'package.json',
+  'README.md',
+  'LICENSE',
+] as const;
 const coreRequiredFiles = [
   'empty-document.d.ts',
   'extensions.d.ts',
@@ -14,6 +21,8 @@ const coreRequiredFiles = [
   'index.d.ts',
   'index.js',
   'package.json',
+  'README.md',
+  'LICENSE',
 ] as const;
 
 async function createFixture(): Promise<string> {
@@ -31,12 +40,15 @@ async function createValidDistFixture(
     writeFile(join(directory, 'index.js'), indexJavaScript),
     writeFile(join(directory, 'index.d.ts'), 'export declare const value: unknown\n'),
     writeFile(join(directory, 'styles.css'), ''),
+    writeFile(join(directory, 'README.md'), '# @cp949/simple-html-editor-react\n'),
+    writeFile(join(directory, 'LICENSE'), 'MIT License\n'),
     writeFile(
       join(directory, 'package.json'),
       JSON.stringify({
         name: '@cp949/simple-html-editor-react',
         version,
         type: 'module',
+        license: 'MIT',
         main: './index.js',
         types: './index.d.ts',
         exports: {
@@ -67,6 +79,7 @@ async function createValidCoreDistFixture(): Promise<string> {
             name: '@cp949/simple-html-editor-core',
             version: '0.1.0',
             type: 'module',
+            license: 'MIT',
             main: './index.js',
             types: './index.d.ts',
             exports: { '.': { types: './index.d.ts', import: './index.js' } },
@@ -76,6 +89,10 @@ async function createValidCoreDistFixture(): Promise<string> {
         );
       }
 
+      if (file === 'README.md') {
+        return writeFile(join(directory, file), '# @cp949/simple-html-editor-core\n');
+      }
+      if (file === 'LICENSE') return writeFile(join(directory, file), 'MIT License\n');
       if (file === 'index.js') return writeFile(join(directory, file), 'export const value = 1\n');
       if (file === 'index.d.ts') {
         return writeFile(
