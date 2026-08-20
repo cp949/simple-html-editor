@@ -10,6 +10,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "demo": "pnpm --filter @cp949/editor-simple-demo dev",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
