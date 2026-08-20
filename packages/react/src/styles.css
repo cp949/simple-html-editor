@@ -39,7 +39,17 @@
 }
 
 .editor-simple__toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.25rem 0.5rem;
+}
+
+/* 아이콘 전용 버튼이 텍스트 버튼과 같은 높이를 유지하도록 크기를 고정한다. */
+.editor-simple__toolbar button svg {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .editor-simple__toolbar button[aria-pressed="true"] {

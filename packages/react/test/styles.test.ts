@@ -20,6 +20,11 @@ describe('editor-simple stylesheet', () => {
     expect(stylesheet).toMatch(/\.editor-simple__toolbar\s*\{[^}]*flex-wrap\s*:\s*wrap/s);
     expect(stylesheet).toMatch(/\.editor-simple__content\s+(?:th|td)[^{]*\{[^}]*border/s);
     expect(stylesheet).toMatch(/button:focus-visible[^}]*outline/s);
+    expect(stylesheet).toMatch(
+      /\.editor-simple__toolbar button\s*\{[^}]*align-items\s*:\s*center/s,
+    );
+    expect(stylesheet).toMatch(/\.editor-simple__toolbar button svg\s*\{[^}]*width\s*:/s);
+    expect(stylesheet).toMatch(/\.editor-simple__toolbar button svg\s*\{[^}]*height\s*:/s);
     expect(stylesheet).toMatch(/\.editor-simple__content\s*\{[^}]*overflow-y\s*:\s*auto/s);
     expect(stylesheet).toMatch(/\.editor-simple__toolbar\s*>\s*\*\s*\{[^}]*margin/s);
     expect(stylesheet).toMatch(/\.editor-simple button:focus\s*,[^}]*outline/s);

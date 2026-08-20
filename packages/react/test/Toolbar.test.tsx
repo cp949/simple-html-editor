@@ -8,6 +8,64 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HtmlEditor } from '../src';
 import { Toolbar } from '../src/Toolbar';
 
+/** 텍스트 표현을 유지하는 toolbar control */
+const textOnlyLabels = ['문단', '제목 1', '제목 2', '제목 3', '제목 4'] as const;
+
+/** 아이콘만 표시하는 toolbar control과 승인된 Lucide 이름 */
+const iconOnlyControls = {
+  굵게: 'bold',
+  기울임: 'italic',
+  밑줄: 'underline',
+  취소선: 'strikethrough',
+  인용구: 'text-quote',
+  '번호 목록': 'list-ordered',
+  '글머리 목록': 'list',
+  들여쓰기: 'list-indent-increase',
+  내어쓰기: 'list-indent-decrease',
+  '왼쪽 정렬': 'text-align-start',
+  '가운데 정렬': 'text-align-center',
+  '오른쪽 정렬': 'text-align-end',
+  '이미지 왼쪽 정렬': 'align-start-vertical',
+  '이미지 가운데 정렬': 'align-center-vertical',
+  '이미지 오른쪽 정렬': 'align-end-vertical',
+  '링크 설정': 'link',
+  '링크 제거': 'unlink',
+  '이미지 추가': 'image-plus',
+  '글자색 제거': 'droplet-off',
+  '서식 지우기': 'remove-formatting',
+  '표 삽입': 'table',
+} as const;
+
+/** 표 밖 selection에서 렌더링하는 toolbar 버튼의 DOM 순서 */
+const defaultToolbarLabels = [
+  '문단',
+  '제목 1',
+  '제목 2',
+  '제목 3',
+  '제목 4',
+  '굵게',
+  '기울임',
+  '밑줄',
+  '취소선',
+  '인용구',
+  '번호 목록',
+  '글머리 목록',
+  '들여쓰기',
+  '내어쓰기',
+  '왼쪽 정렬',
+  '가운데 정렬',
+  '오른쪽 정렬',
+  '이미지 왼쪽 정렬',
+  '이미지 가운데 정렬',
+  '이미지 오른쪽 정렬',
+  '링크 설정',
+  '링크 제거',
+  '이미지 추가',
+  '글자색 제거',
+  '서식 지우기',
+  '표 삽입',
+] as const;
+
 function getTextNode(element: HTMLElement, selector: string): Text {
   const textNode = element.querySelector(selector)?.firstChild;
 
@@ -582,5 +640,50 @@ describe('HtmlEditor toolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: '서식 지우기' }));
 
     await waitFor(() => expect(element.innerHTML).toBe('<p>지우기</p>'));
+  });
+
+  it('아이콘 전용 control이 접근 가능한 이름과 tooltip을 유지한다', async () => {
+    render(<HtmlEditor value="<p>도구</p>" onChange={vi.fn()} />);
+    await screen.findByRole('toolbar', { name: '서식 도구' });
+
+    for (const [label, iconName] of Object.entries(iconOnlyControls)) {
+      const control = screen.getByRole('button', { name: label });
+      const icon = control.querySelector('svg');
+
+      expect(control).toHaveAttribute('title', label);
+      expect(control.textContent).toBe('');
+      expect(control.querySelectorAll('svg')).toHaveLength(1);
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+      expect(icon).toHaveAttribute('focusable', 'false');
+      expect(icon).toHaveClass(`lucide-${iconName}`);
+    }
+  });
+
+  it('텍스트가 더 명확한 control은 텍스트와 native 표현을 유지한다', async () => {
+    render(<HtmlEditor value="<p>도구</p>" onChange={vi.fn()} />);
+    await screen.findByRole('toolbar', { name: '서식 도구' });
+
+    for (const label of textOnlyLabels) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).not.toHaveAttribute('title');
+      expect(control.textContent).toBe(label);
+      expect(control.querySelector('svg')).toBeNull();
+    }
+
+    const color = screen.getByLabelText('글자색');
+    expect(color.tagName).toBe('INPUT');
+    expect(color).toHaveAttribute('type', 'color');
+    expect(color.querySelector('svg')).toBeNull();
+  });
+
+  it('아이콘 전환 후에도 toolbar가 아이콘과 텍스트 control만 노출한다', async () => {
+    render(<HtmlEditor value="<p>도구</p>" onChange={vi.fn()} />);
+    const toolbar = await screen.findByRole('toolbar', { name: '서식 도구' });
+    const labels = Array.from(toolbar.querySelectorAll('button')).map((button) =>
+      button.getAttribute('aria-label'),
+    );
+
+    expect(labels).toEqual([...defaultToolbarLabels]);
   });
 });

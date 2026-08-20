@@ -1,10 +1,22 @@
 import type { Editor } from '@tiptap/core';
 import { TableMap } from '@tiptap/pm/tables';
+import {
+  ArrowDownFromLine,
+  ArrowLeftFromLine,
+  ArrowRightFromLine,
+  ArrowUpFromLine,
+  FoldHorizontal,
+  FoldVertical,
+  type LucideIcon,
+  Table,
+  Trash2,
+} from 'lucide-react';
 
 import { ToolbarButton } from './ToolbarButton';
 
 type TableCommand = {
   label: string;
+  icon: LucideIcon;
   run: () => boolean;
   canRun: () => boolean;
   minimumDimension?: 'row' | 'column';
@@ -32,38 +44,45 @@ export function TableControls({ editor, readOnly }: { editor: Editor; readOnly: 
   const tableCommands: readonly TableCommand[] = [
     {
       label: '위에 행 추가',
+      icon: ArrowUpFromLine,
       run: () => editor.chain().focus().addRowBefore().run(),
       canRun: () => editor.can().chain().focus().addRowBefore().run(),
     },
     {
       label: '아래에 행 추가',
+      icon: ArrowDownFromLine,
       run: () => editor.chain().focus().addRowAfter().run(),
       canRun: () => editor.can().chain().focus().addRowAfter().run(),
     },
     {
       label: '행 삭제',
+      icon: FoldVertical,
       run: () => editor.chain().focus().deleteRow().run(),
       canRun: () => editor.can().chain().focus().deleteRow().run(),
       minimumDimension: 'row',
     },
     {
       label: '왼쪽에 열 추가',
+      icon: ArrowLeftFromLine,
       run: () => editor.chain().focus().addColumnBefore().run(),
       canRun: () => editor.can().chain().focus().addColumnBefore().run(),
     },
     {
       label: '오른쪽에 열 추가',
+      icon: ArrowRightFromLine,
       run: () => editor.chain().focus().addColumnAfter().run(),
       canRun: () => editor.can().chain().focus().addColumnAfter().run(),
     },
     {
       label: '열 삭제',
+      icon: FoldHorizontal,
       run: () => editor.chain().focus().deleteColumn().run(),
       canRun: () => editor.can().chain().focus().deleteColumn().run(),
       minimumDimension: 'column',
     },
     {
       label: '표 삭제',
+      icon: Trash2,
       run: () => editor.chain().focus().deleteTable().run(),
       canRun: () => editor.can().chain().focus().deleteTable().run(),
     },
@@ -86,6 +105,7 @@ export function TableControls({ editor, readOnly }: { editor: Editor; readOnly: 
       {!isInTable ? (
         <ToolbarButton
           label="표 삽입"
+          icon={Table}
           disabled={
             readOnly ||
             !editor
@@ -100,24 +120,21 @@ export function TableControls({ editor, readOnly }: { editor: Editor; readOnly: 
               editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
             }
           }}
-        >
-          표 삽입
-        </ToolbarButton>
+        />
       ) : null}
       {isInTable
         ? tableCommands.map((command) => (
             <ToolbarButton
               key={command.label}
               label={command.label}
+              icon={command.icon}
               disabled={readOnly || !canRunTableCommand(command)}
               onClick={() => {
                 if (!readOnly) {
                   command.run();
                 }
               }}
-            >
-              {command.label}
-            </ToolbarButton>
+            />
           ))
         : null}
     </>

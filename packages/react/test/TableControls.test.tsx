@@ -261,4 +261,32 @@ describe('TableControls', () => {
     expect(element.innerHTML).toBe(before);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('표 안 selection의 contextual control이 모두 아이콘과 tooltip으로 표시된다', async () => {
+    const { editor } = await renderToolbar(tableHtml);
+    selectTableCell(editor, '선택 행 가운데');
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '표 삭제' })).toBeInTheDocument(),
+    );
+    const contextualControls = {
+      '위에 행 추가': 'arrow-up-from-line',
+      '아래에 행 추가': 'arrow-down-from-line',
+      '행 삭제': 'fold-vertical',
+      '왼쪽에 열 추가': 'arrow-left-from-line',
+      '오른쪽에 열 추가': 'arrow-right-from-line',
+      '열 삭제': 'fold-horizontal',
+      '표 삭제': 'trash-2',
+    } as const;
+
+    for (const [label, iconName] of Object.entries(contextualControls)) {
+      const control = screen.getByRole('button', { name: label });
+      const icon = control.querySelector('svg');
+
+      expect(control).toHaveAttribute('title', label);
+      expect(control.textContent).toBe('');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+      expect(icon).toHaveClass(`lucide-${iconName}`);
+    }
+  });
 });

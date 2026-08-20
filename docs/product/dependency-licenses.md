@@ -108,6 +108,7 @@ Allowed licenses: MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, 0BSD, MPL-2.
 | lightningcss-linux-x64-gnu | 1.33.0 | MPL-2.0 | no |
 | linkifyjs | 4.3.3 | MIT | yes |
 | loose-envify | 1.4.0 | MIT | no |
+| lucide-react | 1.33.0 | ISC | yes |
 | lz-string | 1.5.0 | MIT | no |
 | magic-string | 0.30.21 | MIT | no |
 | min-indent | 1.0.1 | MIT | no |

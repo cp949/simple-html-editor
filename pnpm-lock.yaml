@@ -19,7 +19,7 @@ importers:
         version: 10.4.1
       '@testing-library/jest-dom':
         specifier: ^7.0.1
-        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)))
+        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6))
       '@testing-library/react':
         specifier: ^16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -52,7 +52,7 @@ importers:
         version: 8.2.2(@types/node@22.20.1)(esbuild@0.28.2)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2))
+        version: 4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6)
 
   apps/demo:
     dependencies:
@@ -152,7 +152,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2))
+        version: 4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6)
 
   packages/react:
     dependencies:
@@ -171,13 +171,16 @@ importers:
       '@tiptap/react':
         specifier: ^3.30.2
         version: 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      lucide-react:
+        specifier: ^1.33.0
+        version: 1.33.0(react@19.2.8)
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
       '@testing-library/jest-dom':
         specifier: ^7.0.1
-        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)))
+        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6))
       '@testing-library/react':
         specifier: ^16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -201,7 +204,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2))
+        version: 4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6)
 
 packages:
 
@@ -1045,6 +1048,11 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
+  lucide-react@1.33.0:
+    resolution: {integrity: sha512-MTRwMy0ZlL8Ur/vOAiJ9XGHE+kFPC7brq6MxAm0GiGXEBj0qy0jA/pG4N675oSzciO/UCdX8T+5yUQdmDeTLxg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -1282,7 +1290,6 @@ packages:
       '@vitest/ui': 4.1.11
       happy-dom: '*'
       jsdom: '*'
-      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true
@@ -1537,7 +1544,7 @@ snapshots:
       picocolors: 1.1.1
       pretty-format: 27.5.1
 
-  '@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)))':
+  '@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6))':
     dependencies:
       '@adobe/css-tools': 4.5.0
       '@testing-library/dom': 10.4.1
@@ -1547,7 +1554,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2))
+      vitest: 4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6)
 
   '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -2011,6 +2018,10 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
+  lucide-react@1.33.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+
   lz-string@1.5.0: {}
 
   magic-string@0.30.21:
@@ -2229,7 +2240,7 @@ snapshots:
       esbuild: 0.28.2
       fsevents: 2.3.3
 
-  vitest@4.1.11(@types/node@22.20.1)(happy-dom@20.11.6)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)):
+  vitest@4.1.11(@types/node@22.20.1)(esbuild@0.28.2)(happy-dom@20.11.6):
     dependencies:
       '@vitest/expect': 4.1.11
       '@vitest/mocker': 4.1.11(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2))
@@ -2255,7 +2266,18 @@ snapshots:
       '@types/node': 22.20.1
       happy-dom: 20.11.6
     transitivePeerDependencies:
+      - '@vitejs/devtools'
+      - esbuild
+      - jiti
+      - less
       - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   w3c-keyname@2.2.8: {}
 

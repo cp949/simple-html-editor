@@ -1,5 +1,28 @@
 import { isAllowedLinkHref, selectedImageAlignment } from '@cp949/editor-simple-core';
 import type { Editor } from '@tiptap/core';
+import {
+  AlignCenter,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignLeft,
+  AlignRight,
+  AlignStartVertical,
+  Bold,
+  DropletOff,
+  ImagePlus,
+  IndentDecrease,
+  IndentIncrease,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  type LucideIcon,
+  RemoveFormatting,
+  Strikethrough,
+  TextQuote,
+  Underline,
+  Unlink,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ToolbarButton } from './ToolbarButton';
@@ -7,12 +30,22 @@ import { TableControls } from './TableControls';
 
 type HeadingLevel = 1 | 2 | 3 | 4;
 
+type TextAlignment = 'left' | 'center' | 'right';
+
 const headingLevels: readonly HeadingLevel[] = [1, 2, 3, 4];
 
+// 문단 정렬은 텍스트 줄 기준 아이콘을 사용한다.
+const textAlignments = [
+  { alignment: 'left', label: '왼쪽 정렬', icon: AlignLeft },
+  { alignment: 'center', label: '가운데 정렬', icon: AlignCenter },
+  { alignment: 'right', label: '오른쪽 정렬', icon: AlignRight },
+] as const satisfies readonly { alignment: TextAlignment; label: string; icon: LucideIcon }[];
+
+// 이미지 정렬은 문단 정렬과 구분하기 위해 개체 기준선 아이콘을 사용한다.
 const imageAlignments = [
-  { alignment: 'left', label: '이미지 왼쪽 정렬' },
-  { alignment: 'center', label: '이미지 가운데 정렬' },
-  { alignment: 'right', label: '이미지 오른쪽 정렬' },
+  { alignment: 'left', label: '이미지 왼쪽 정렬', icon: AlignStartVertical },
+  { alignment: 'center', label: '이미지 가운데 정렬', icon: AlignCenterVertical },
+  { alignment: 'right', label: '이미지 오른쪽 정렬', icon: AlignEndVertical },
 ] as const;
 
 /** HtmlEditor 내부에서만 Tiptap command를 접근 가능한 control로 제공한다. */
@@ -82,134 +115,116 @@ export function Toolbar({
       ))}
       <ToolbarButton
         label="굵게"
+        icon={Bold}
         active={editor.isActive('bold')}
         disabled={readOnly || !editor.can().chain().focus().toggleBold().run()}
         onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        굵게
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="기울임"
+        icon={Italic}
         active={editor.isActive('italic')}
         disabled={readOnly || !editor.can().chain().focus().toggleItalic().run()}
         onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        기울임
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="밑줄"
+        icon={Underline}
         active={editor.isActive('underline')}
         disabled={readOnly || !editor.can().chain().focus().toggleUnderline().run()}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        밑줄
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="취소선"
+        icon={Strikethrough}
         active={editor.isActive('strike')}
         disabled={readOnly || !editor.can().chain().focus().toggleStrike().run()}
         onClick={() => editor.chain().focus().toggleStrike().run()}
-      >
-        취소선
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="인용구"
+        icon={TextQuote}
         active={editor.isActive('blockquote')}
         disabled={readOnly || !editor.can().chain().focus().toggleBlockquote().run()}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        인용구
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="번호 목록"
+        icon={ListOrdered}
         active={editor.isActive('orderedList')}
         disabled={readOnly || !editor.can().chain().focus().toggleOrderedList().run()}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        번호 목록
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="글머리 목록"
+        icon={List}
         active={editor.isActive('bulletList')}
         disabled={readOnly || !editor.can().chain().focus().toggleBulletList().run()}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        글머리 목록
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="들여쓰기"
+        icon={IndentIncrease}
         disabled={readOnly || !editor.can().chain().focus().sinkListItem('listItem').run()}
         onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
-      >
-        들여쓰기
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="내어쓰기"
+        icon={IndentDecrease}
         disabled={readOnly || !editor.can().chain().focus().liftListItem('listItem').run()}
         onClick={() => editor.chain().focus().liftListItem('listItem').run()}
-      >
-        내어쓰기
-      </ToolbarButton>
-      {(['left', 'center', 'right'] as const).map((alignment) => {
-        const label = { left: '왼쪽 정렬', center: '가운데 정렬', right: '오른쪽 정렬' }[alignment];
-
-        return (
-          <ToolbarButton
-            key={alignment}
-            label={label}
-            active={
-              !isImageSelected &&
-              (alignment === 'left'
-                ? !editor.isActive({ textAlign: 'center' }) &&
-                  !editor.isActive({ textAlign: 'right' })
-                : editor.isActive({ textAlign: alignment }))
-            }
-            disabled={
-              readOnly ||
-              isImageSelected ||
-              !editor.can().chain().focus().setTextAlign(alignment).run()
-            }
-            onClick={() => editor.chain().focus().setTextAlign(alignment).run()}
-          >
-            {label}
-          </ToolbarButton>
-        );
-      })}
-      {imageAlignments.map(({ alignment, label }) => (
+      />
+      {textAlignments.map(({ alignment, label, icon }) => (
         <ToolbarButton
           key={alignment}
           label={label}
+          icon={icon}
+          active={
+            !isImageSelected &&
+            (alignment === 'left'
+              ? !editor.isActive({ textAlign: 'center' }) &&
+                !editor.isActive({ textAlign: 'right' })
+              : editor.isActive({ textAlign: alignment }))
+          }
+          disabled={
+            readOnly ||
+            isImageSelected ||
+            !editor.can().chain().focus().setTextAlign(alignment).run()
+          }
+          onClick={() => editor.chain().focus().setTextAlign(alignment).run()}
+        />
+      ))}
+      {imageAlignments.map(({ alignment, label, icon }) => (
+        <ToolbarButton
+          key={alignment}
+          label={label}
+          icon={icon}
           active={imageAlignment === alignment}
           disabled={readOnly || !editor.can().setImageAlignment(alignment)}
           onClick={() => editor.commands.setImageAlignment(alignment)}
-        >
-          {label}
-        </ToolbarButton>
+        />
       ))}
       <ToolbarButton
         label="링크 설정"
+        icon={Link}
         active={editor.isActive('link')}
         disabled={
           readOnly || !editor.can().chain().focus().setLink({ href: 'https://example.com' }).run()
         }
         onClick={setLink}
-      >
-        링크 설정
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="링크 제거"
+        icon={Unlink}
         disabled={readOnly || !editor.can().chain().focus().unsetLink().run()}
         onClick={() => editor.chain().focus().unsetLink().run()}
-      >
-        링크 제거
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="이미지 추가"
+        icon={ImagePlus}
         disabled={readOnly || onPickImage === undefined}
         onClick={() => onPickImage?.()}
-      >
-        이미지 추가
-      </ToolbarButton>
+      />
       <input
         type="color"
         aria-label="글자색"
@@ -223,18 +238,16 @@ export function Toolbar({
       />
       <ToolbarButton
         label="글자색 제거"
+        icon={DropletOff}
         disabled={readOnly || !editor.can().chain().focus().unsetColor().run()}
         onClick={() => editor.chain().focus().unsetColor().run()}
-      >
-        글자색 제거
-      </ToolbarButton>
+      />
       <ToolbarButton
         label="서식 지우기"
+        icon={RemoveFormatting}
         disabled={readOnly || !editor.can().chain().focus().unsetAllMarks().clearNodes().run()}
         onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
-      >
-        서식 지우기
-      </ToolbarButton>
+      />
       <TableControls editor={editor} readOnly={readOnly} />
     </div>
   );
