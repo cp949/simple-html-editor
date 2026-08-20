@@ -9,7 +9,7 @@ const corePackage = '@cp949/simple-html-editor-core';
 const reactPackage = '@cp949/simple-html-editor-react';
 
 export function parsePublishArguments(argv) {
-  const options = { dryRun: false, skipVerify: false, otp: undefined };
+  const options = { dryRun: false, skipVerify: false, skipCore: false, otp: undefined };
 
   for (const argument of argv) {
     if (argument === '--dry-run') {
@@ -18,6 +18,10 @@ export function parsePublishArguments(argv) {
     }
     if (argument === '--skip-verify') {
       options.skipVerify = true;
+      continue;
+    }
+    if (argument === '--skip-core') {
+      options.skipCore = true;
       continue;
     }
     if (argument.startsWith('--otp=')) {
@@ -107,19 +111,21 @@ function publishArguments(directory, otp, dryRun) {
   return args;
 }
 
-async function confirmRegistryVersion(name, version) {
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
-    const result = run('npm', ['view', `${name}@${version}`, 'version'], { capture: true });
+function reportRegistryVersion(name, version) {
+  const result = run('npm', ['view', `${name}@${version}`, 'version', '--prefer-online'], {
+    capture: true,
+  });
 
-    if (result.status === 0 && result.stdout.trim() === version) return;
-
-    if (attempt < 5) {
-      console.log(`${name}@${version} registry 반영 대기 중 (${attempt}/5)`);
-      await new Promise((settle) => setTimeout(settle, 3000));
-    }
+  if (result.status === 0 && result.stdout.trim() === version) {
+    console.log(`registry 확인: ${name}@${version}`);
+    return true;
   }
 
-  throw new Error(`registry에서 ${name}@${version}을 확인하지 못했습니다.`);
+  // registry read path는 publish 직후 지연될 수 있다. 배포 자체를 실패로 보지 않는다.
+  console.log(
+    `registry 미확인: ${name}@${version}. 반영이 지연될 수 있으니 나중에 다시 조회하세요.`,
+  );
+  return false;
 }
 
 async function main() {
@@ -151,11 +157,15 @@ async function main() {
     assertSuccess(run('pnpm', ['verify']), 'pnpm verify에 실패해 배포를 중단합니다.');
   }
 
-  const coreOtp = await readOneTimePassword(corePackage, options.otp);
-  assertSuccess(
-    run('npm', publishArguments('packages/core/dist', coreOtp, options.dryRun)),
-    `${corePackage} 배포에 실패했습니다. registry에 반영되지 않았습니다.`,
-  );
+  if (options.skipCore) {
+    console.log(`${corePackage}@${version}은 이미 배포된 것으로 보고 건너뜁니다.`);
+  } else {
+    const coreOtp = await readOneTimePassword(corePackage, options.otp);
+    assertSuccess(
+      run('npm', publishArguments('packages/core/dist', coreOtp, options.dryRun)),
+      `${corePackage} 배포에 실패했습니다. registry에 반영되지 않았습니다.`,
+    );
+  }
 
   if (options.dryRun) {
     const reactDryRunOtp = await readOneTimePassword(reactPackage, options.otp);
@@ -167,8 +177,7 @@ async function main() {
     return;
   }
 
-  await confirmRegistryVersion(corePackage, version);
-  console.log(`${corePackage}@${version} 배포를 확인했습니다.`);
+  reportRegistryVersion(corePackage, version);
 
   const reactOtp = await readOneTimePassword(reactPackage, options.otp);
   const reactPublish = run('npm', publishArguments('packages/react/dist', reactOtp, false));
@@ -184,15 +193,21 @@ async function main() {
     );
   }
 
-  await confirmRegistryVersion(reactPackage, version);
+  if (reportRegistryVersion(reactPackage, version)) {
+    const dependencies = run(
+      'npm',
+      ['view', `${reactPackage}@${version}`, 'dependencies', '--json', '--prefer-online'],
+      { capture: true },
+    );
 
-  const dependencies = assertSuccess(
-    run('npm', ['view', `${reactPackage}@${version}`, 'dependencies', '--json'], { capture: true }),
-    '배포된 React dependency 조회에 실패했습니다.',
-  );
-  assertPublishedDependency(JSON.parse(dependencies.stdout), version);
+    if (dependencies.status === 0) {
+      assertPublishedDependency(JSON.parse(dependencies.stdout), version);
+      console.log(`registry 확인: ${reactPackage}가 ${corePackage}@${version}에 의존합니다.`);
+    }
+  }
 
   console.log(`배포 완료: ${corePackage}@${version}, ${reactPackage}@${version}`);
+  console.log(`반영 후 확인: npm view ${reactPackage}@${version} dependencies --prefer-online`);
 }
 
 if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

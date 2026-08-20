@@ -11,17 +11,22 @@ test('알 수 없는 인자를 거부한다', () => {
   assert.throws(() => parsePublishArguments(['--force']), /알 수 없는 인자입니다: --force/);
 });
 
-test('dry-run, skip-verify와 otp 인자를 읽는다', () => {
+test('dry-run, skip-verify, skip-core와 otp 인자를 읽는다', () => {
   assert.deepEqual(parsePublishArguments([]), {
     dryRun: false,
     skipVerify: false,
+    skipCore: false,
     otp: undefined,
   });
-  assert.deepEqual(parsePublishArguments(['--dry-run', '--skip-verify', '--otp=123456']), {
-    dryRun: true,
-    skipVerify: true,
-    otp: '123456',
-  });
+  assert.deepEqual(
+    parsePublishArguments(['--dry-run', '--skip-verify', '--skip-core', '--otp=123456']),
+    {
+      dryRun: true,
+      skipVerify: true,
+      skipCore: true,
+      otp: '123456',
+    },
+  );
 });
 
 test('루트와 두 공개 package version 불일치를 거부한다', () => {

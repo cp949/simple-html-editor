@@ -60,17 +60,20 @@ pnpm publish:npm
 2. 작업 트리가 깨끗한지 확인
 3. `pnpm verify` 실행
 4. core OTP 입력 후 `npm publish packages/core/dist --access public`
-5. registry에서 core version 확인 (최대 5회, 3초 간격)
+5. registry에서 core version 조회 (보고만 하고 배포를 막지 않음)
 6. React OTP 입력 후 `npm publish packages/react/dist --access public`
-7. registry에서 React version과 core exact dependency 확인
+7. registry에서 React version과 core exact dependency 조회 (보고만 함)
 
-계정에 2FA가 걸려 있으면 npm이 `EOTP`로 거부한다. OTP는 약 30초 후 만료되고 조작마다 새 코드가 필요할 수 있으므로 이 명령은 검증이 끝난 뒤 publish 직전에 매번 코드를 입력받는다. 2FA를 쓰지 않으면 입력 없이 Enter를 누른다.
+registry read path는 publish 직후 몇 분 지연될 수 있다. 5단계와 7단계의 조회 실패는 배포 실패가 아니므로 스크립트를 중단시키지 않는다. 반영 후 6장의 명령으로 다시 확인한다.
+
+npm 계정 설정에 따라 인증 방식이 다르다. TOTP 방식이면 npm이 `EOTP`로 거부하므로 코드를 입력한다. 웹 인증 방식이면 npm이 브라우저 인증 URL을 출력하므로 OTP 프롬프트에서 Enter만 누르고 브라우저에서 승인한다. OTP는 약 30초 후 만료되고 조작마다 새 코드가 필요할 수 있으므로 이 명령은 검증이 끝난 뒤 publish 직전에 매번 코드를 입력받는다. 2FA를 쓰지 않으면 입력 없이 Enter를 누른다.
 
 옵션은 `--` 뒤에 전달한다.
 
 ```bash
 pnpm publish:npm -- --dry-run       # 두 패키지 dry-run만 실행
 pnpm publish:npm -- --skip-verify   # 직전에 pnpm verify를 통과한 경우
+pnpm publish:npm -- --skip-core     # core가 이미 배포된 상태에서 React만 재개
 pnpm publish:npm -- --otp=123456    # 비대화형 환경에서 코드 직접 전달
 ```
 
@@ -98,6 +101,7 @@ React의 `dependencies["@cp949/simple-html-editor-core"]`가 범위 없는 같�
 npm은 두 패키지 publish를 하나의 원자적 transaction으로 제공하지 않는다.
 
 - core 배포 후 React 배포가 실패하면 core version을 제거하거나 다른 version으로 바꾸지 않고 같은 version의 React 배포를 재시도한다. `pnpm publish:npm`은 이 상황에서 재시도 명령을 출력하고 중단한다.
+- core만 배포된 상태에서 재개하려면 `pnpm publish:npm -- --skip-core`를 사용한다. core를 다시 배포하려 하면 npm이 `EPUBLISHCONFLICT`로 거부한다.
 - 같은 version으로 완료할 수 없는 결함이면 두 패키지에 다음 version을 발급해 함께 배포하고 불완전한 version을 deprecate한다.
 
 위험도: 중간
