@@ -56,7 +56,7 @@ export interface HtmlEditorProps {
 - `placeholder`는 빈 문서에 안내 문구를 표시한다.
 - `readOnly`는 입력, toolbar 명령, 이미지 선택과 이미지 붙여넣기를 차단한다.
 - `className`은 편집기 최상위 요소에 적용한다.
-- 공개 타입에는 Tiptap과 ProseMirror 타입을 노출하지 않는다.
+- React 공개 타입에는 Tiptap과 ProseMirror 타입을 노출하지 않는다.
 
 ### 3.3 기본 블록과 인라인 서식
 
@@ -163,7 +163,7 @@ toolbar는 현재 selection의 활성 서식을 표시하고 실행할 수 없�
 - Chrome 85 이상 지원
 - SSR 환경에서 안전한 import
 - ESM JavaScript, TypeScript 선언과 CSS export 제공
-- 공개 dist는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일로 구성
+- core 공개 dist는 7파일, React 공개 dist는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일로 구성
 - React와 ReactDOM만 peer dependency로 노출
 - production/full audit의 모든 severity가 0이어야 함
 - 직접·전이·번들 의존성이 승인된 라이선스 allowlist를 통과해야 함

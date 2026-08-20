@@ -17,11 +17,11 @@
 모든 작업은 다음 계약을 유지한다.
 
 - 공개 interface는 `HtmlEditor`, `HtmlEditorProps`와 `HtmlEditorHandle.focus()`로 제한한다.
-- 공개 타입에 Tiptap과 ProseMirror 타입을 노출하지 않는다.
+- React 공개 타입에 Tiptap과 ProseMirror 타입을 노출하지 않는다.
 - 저장 결과는 정규화 HTML이며 편집기 DOM이나 별도 이미지 상태를 저장하지 않는다.
 - `readOnly`에서는 모든 문서 변경 control과 이미지 상호작용을 차단한다.
 - React 18.3과 React 19, Chrome 85 이상, SSR-safe import를 유지한다.
-- 공개 `dist`는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일만 포함한다.
+- core 공개 `dist`는 7파일, React 공개 `dist`는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일만 포함한다.
 - React와 ReactDOM만 peer dependency로 노출한다.
 - production/full audit의 모든 severity 0과 승인된 라이선스 allowlist를 유지한다.
 - 보류 기능은 제품 기능 계약에서 예정 기능으로 승격되기 전에는 이 로드맵에 추가하지 않는다.
@@ -80,7 +80,7 @@ type ImagePresentation = {
 
 **완료 조건:**
 
-- `pnpm demo`가 `@cp949/editor-simple-demo` 개발 서버를 시작한다.
+- `pnpm demo`가 `@cp949/simple-html-editor-demo` 개발 서버를 시작한다.
 - demo build와 기존 저장 HTML 불러오기 → 편집 → 저장 → 재조회 테스트가 통과한다.
 - 제품 기능 계약 7장의 `pnpm demo` 항목을 충족한다.
 
@@ -114,7 +114,7 @@ type ImagePresentation = {
 
 **범위:**
 
-- private `core`의 image schema와 HTML policy에 `width`와 `alignment`를 추가한다.
+- 공개 core 패키지의 내부 image schema와 HTML policy에 `width`와 `alignment`를 추가한다.
 - 이 문서 3장의 attribute/style allowlist와 fallback을 구현한다.
 - `src`와 `alt`의 기존 안전성 및 빈 문서 판정 계약을 유지한다.
 - raw 외부 HTML → editor document → 정규화 HTML → 재조회 round-trip을 검증한다.
@@ -187,7 +187,7 @@ type ImagePresentation = {
 
 - 모든 아이콘 버튼을 접근 가능한 이름으로 찾을 수 있고 tooltip으로 의미를 확인할 수 있다.
 - command, selection 유지, pressed와 disabled 동작이 아이콘 전환 전과 같다.
-- package boundary, dist 4파일, bundle evidence, 라이선스와 production/full audit 검사가 통과한다.
+- package boundary, core dist 7파일·React dist 4파일, bundle evidence, 라이선스와 production/full audit 검사가 통과한다.
 
 ### R7. 예정 기능 통합 검증
 

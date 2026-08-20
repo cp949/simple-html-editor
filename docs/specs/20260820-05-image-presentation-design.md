@@ -7,7 +7,7 @@
 ## 1. 결정
 
 이미지의 영속 상태는 image node의 `src`, `alt`, `width`, `alignment` 네 attribute와
-wrapper 없는 저장 HTML의 `<img>` 하나로 표현한다. private `core` module이 image schema,
+wrapper 없는 저장 HTML의 `<img>` 하나로 표현한다. 공개 core 패키지의 내부 module이 image schema,
 parse와 render 정책을 소유하고, `react` module은 주입된 NodeView renderer로 editor DOM과
 pointer 상호작용을 소유한다.
 
@@ -153,9 +153,9 @@ placeholder image로 바꾸지 않는다.
 
 ## 6. Module과 seam
 
-### 6.1 private core module
+### 6.1 core package 내부 module
 
-private `core` module은 다음 구현을 한곳에 둔다.
+core package 내부 module은 다음 구현을 한곳에 둔다.
 
 - image attribute schema
 - `src`, `width`와 alignment parse
@@ -163,14 +163,14 @@ private `core` module은 다음 구현을 한곳에 둔다.
 - image alignment command와 selection 판정
 - 기본값과 불변식
 
-`createHtmlEditorExtensions`는 선택적인 private NodeView renderer를 받는다. renderer가 없으면
+`createHtmlEditorExtensions`는 선택적인 NodeView renderer를 받는다. renderer가 없으면
 core test와 HTML 정규화에 사용하는 기본 image extension을 만들고, renderer가 있으면 같은
 schema와 command에 해당 renderer만 연결한다. schema를 복제한 두 image extension을 만들지
 않는다.
 
 이 seam은 기본 core adapter와 React NodeView adapter가 함께 사용한다. Tiptap의
-`NodeViewRenderer` type은 private workspace interface에만 존재하며 공개
-`@cp949/editor-simple` 선언에는 포함하지 않는다.
+`NodeViewRenderer` type은 core 공개 선언에 포함될 수 있지만 React 공개
+`@cp949/simple-html-editor-react` 선언에는 포함하지 않는다.
 
 ### 6.2 React NodeView adapter
 
@@ -390,7 +390,7 @@ capture만 제어 가능한 test adapter로 대체한다. 다음을 검증한다
 ### 공통 package와 Human test
 
 R3~R5는 각 범위의 unit/integration test 외에 typecheck, package boundary와 SSR import를
-유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh dist 4파일과 Chrome 85 target
+유지한다. R5 완료 시 React 18.3·React 19 consumer, fresh core dist 7파일·React dist 4파일과 Chrome 85 target
 gate를 실행한다.
 
 실제 Chrome 85 Human test는 자동화된 최신 Chromium E2E와 구분해 기록한다. 대표 흐름은

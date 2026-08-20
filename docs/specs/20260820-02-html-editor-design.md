@@ -96,7 +96,7 @@ core <- react <- demo
 
 ### `packages/core`
 
-Tiptap과 ProseMirror 기반 편집 규칙을 소유하는 private workspace 패키지다.
+Tiptap과 ProseMirror 기반 편집 규칙을 제공하는 공개 `@cp949/simple-html-editor-core` 패키지다.
 
 - 허용 extension과 HTML schema
 - 외부 HTML 정규화
@@ -110,13 +110,15 @@ Tiptap 타입은 공개 React 패키지의 선언 파일에 노출하지 않는�
 
 ### `packages/react`
 
-외부에 제공하는 `@cp949/editor-simple` 패키지다.
+React UI를 제공하는 공개 `@cp949/simple-html-editor-react` 패키지다.
 
 - `<HtmlEditor>`
 - `<HtmlEditor>`의 props와 imperative handle 타입
 - 기본 toolbar
 - 기본 스타일과 CSS export
 - React 생명주기와 외부 `value` 동기화
+
+두 공개 패키지의 이름, 동일 버전과 동기 배포 계약은 [공개 패키지 이름과 동기 배포 설계](./20260821-02-public-package-names-design.md)를 따른다.
 
 ### `apps/demo`
 
@@ -227,14 +229,14 @@ Tiptap의 TextStyle과 Color extension으로 글자색을 표현한다.
 
 ## 11. 빌드와 패키지
 
-`@cp949/editor-simple`은 React와 ReactDOM만 peer dependency로 둔다.
+`@cp949/simple-html-editor-react`는 React와 ReactDOM만 peer dependency로 두고 같은 exact version의 `@cp949/simple-html-editor-core`에 의존한다.
 
 - peer 범위는 React 18을 포함한다.
-- Tiptap, ProseMirror와 내부 runtime은 공개 bundle에 포함한다.
-- React, ReactDOM과 JSX runtime은 external로 유지한다.
+- 각 공개 패키지의 선언된 runtime dependency와 peer dependency는 bundle에서 external로 유지한다.
 - 출력 target은 Chrome 85다.
-- ESM JavaScript, `.d.ts`, CSS와 소비용 `package.json`을 `packages/react/dist`에 생성한다.
-- package export는 루트 JavaScript·타입과 `./styles.css`를 제공한다.
+- core는 ESM JavaScript, 선언 5개와 소비용 `package.json`의 7파일을 `packages/core/dist`에 생성한다.
+- React는 ESM JavaScript, `.d.ts`, CSS와 소비용 `package.json`의 4파일을 `packages/react/dist`에 생성한다.
+- 두 package export는 루트 JavaScript와 타입을 제공하고 React만 `./styles.css`를 추가 제공한다.
 - bundle에 포함된 모든 제3자 코드는 라이선스 보고서에 기록한다.
 
 번들된 의존성을 공개 `dependencies`에서 숨겨 audit 결과만 깨끗하게 보이게 하는 방식은 사용하지 않는다. build-time dependency graph와 번들 구성요소를 모두 검사하고 기록한다.
@@ -264,17 +266,17 @@ Human test에서는 소비자 workspace의 `package.json`이 이 디렉터리를
 
 ```json
 {
-  "@cp949/editor-simple": "link:<simple-html-editor-root>/packages/react/dist"
+    "@cp949/simple-html-editor-react": "link:<simple-html-editor-root>/packages/react/dist"
 }
 ```
 
-`<simple-html-editor-root>`는 각 개발자의 checkout 위치로 교체하는 placeholder다. 이 로컬 link는 Human test용이며 배포 가능한 영구 의존성으로 커밋하지 않는다. 실제 배포 방식은 Human test 이후 별도 결정한다.
+`<simple-html-editor-root>`는 각 개발자의 checkout 위치로 교체하는 placeholder다. 이 로컬 link는 Human test용이며 배포 가능한 영구 의존성으로 커밋하지 않는다. 실제 배포는 두 공개 패키지에 같은 version을 부여해 함께 수행한다.
 
-CSS는 소비자의 전역 CSS 진입점에서 `@cp949/editor-simple/styles.css`를 한 번 import한다.
+CSS는 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/styles.css`를 한 번 import한다.
 
 ## 14. 소비자 적용 순서
 
-1. editor-simple의 전체 검증을 통과한다.
+1. simple-html-editor의 전체 검증을 통과한다.
 2. `packages/react/dist`를 생성한다.
 3. 소비자 저장소의 branch, working tree와 workspace 상태를 확인한다.
 4. 대상 workspace에 로컬 dist link를 추가한다.

@@ -1,4 +1,4 @@
-# @cp949/editor-simple
+# @cp949/simple-html-editor-react
 
 React 18.3과 React 19 애플리케이션에서 서버 HTML을 불러오고 편집해 정규화 HTML로 돌려주는 제어형 WYSIWYG 편집기다. 네트워크 요청, 저장, 재시도와 이미지 업로드는 소비자가 소유한다.
 
@@ -7,13 +7,13 @@ React 18.3과 React 19 애플리케이션에서 서버 HTML을 불러오고 편�
 배포 패키지와 peer dependency를 설치한 뒤 라이브러리 CSS를 애플리케이션의 전역 CSS 진입점에서 한 번 import한다.
 
 ```bash
-pnpm add @cp949/editor-simple react@^18.3.0 react-dom@^18.3.0
+pnpm add @cp949/simple-html-editor-react react@^18.3.0 react-dom@^18.3.0
 ```
 
 ```tsx
 import { useRef, useState } from 'react'
-import { HtmlEditor, type HtmlEditorHandle } from '@cp949/editor-simple'
-import '@cp949/editor-simple/styles.css'
+import { HtmlEditor, type HtmlEditorHandle } from '@cp949/simple-html-editor-react'
+import '@cp949/simple-html-editor-react/styles.css'
 
 export function PostEditor() {
   const [html, setHtml] = useState<string | undefined>('<p>서버 HTML</p>')
@@ -48,6 +48,24 @@ export function PostEditor() {
 
 ref는 `HtmlEditorHandle`의 `focus(): void`만 공개한다. 완전히 다른 문서로 전환하면서 selection과 undo 이력을 분리해야 한다면 소비자가 `key={documentId}`를 지정한다.
 
+### core 직접 사용
+
+React UI 없이 HTML 정책과 extension 집합만 사용하려면 core 패키지를 직접 설치한다.
+
+```bash
+pnpm add @cp949/simple-html-editor-core
+```
+
+```ts
+import {
+  createHtmlEditorExtensions,
+  isAllowedImageSrc,
+  isAllowedLinkHref,
+  isEditorDocumentEmpty,
+  selectedImageAlignment,
+} from '@cp949/simple-html-editor-core'
+```
+
 ## HTML 정규화와 이미지 소유권
 
 외부 `value`는 지원 schema로 읽는다. 사용자 편집 뒤의 `onChange`는 태그 wrapper, 공백, 속성 순서를 바이트 단위로 보존하지 않는 정규화 HTML이다. `<script>`, 이벤트 속성, 위험 URL과 지원하지 않는 style은 저장 계약에서 제외된다.
@@ -71,12 +89,12 @@ packages/react/dist
 ```json
 {
   "dependencies": {
-    "@cp949/editor-simple": "link:<simple-html-editor-root>/packages/react/dist"
+    "@cp949/simple-html-editor-react": "link:<simple-html-editor-root>/packages/react/dist"
   }
 }
 ```
 
-`<simple-html-editor-root>`는 각 개발자의 checkout 위치로 교체하는 placeholder다. 이 로컬 link는 Human test 전용이며 배포 가능한 영구 의존성으로 커밋하지 않는다. 연결 뒤에도 소비자의 전역 CSS 진입점에서 `@cp949/editor-simple/styles.css`를 import해야 한다.
+`<simple-html-editor-root>`는 각 개발자의 checkout 위치로 교체하는 placeholder다. 이 로컬 link는 Human test 전용이며 배포 가능한 영구 의존성으로 커밋하지 않는다. 연결 뒤에도 소비자의 전역 CSS 진입점에서 `@cp949/simple-html-editor-react/styles.css`를 import해야 한다.
 
 ## 개발과 검증
 
@@ -93,7 +111,7 @@ pnpm exec playwright test
 pnpm verify
 ```
 
-`pnpm verify`는 build, typecheck, 단위 테스트, package boundary, fresh public `dist`, 라이선스와 production/full audit을 검사한다. 공개 `dist`는 `index.js`, `index.d.ts`, `styles.css`, `package.json` 네 파일만 가진다.
+`pnpm verify`는 build, typecheck, 단위 테스트, package boundary, fresh public `dist`, tarball 격리 소비, 라이선스와 production/full audit을 검사한다. core 공개 `dist`는 JavaScript, 선언 5개와 `package.json`의 7파일이고 React 공개 `dist`는 `index.js`, `index.d.ts`, `styles.css`, `package.json`의 4파일이다.
 
 ## 라이선스 정책
 
