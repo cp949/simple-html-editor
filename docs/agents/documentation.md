@@ -60,12 +60,17 @@ docs/reviews/20260820-01-shared-agent-documentation-review.md
   → 사용자 승인 후 approved
   → 승인 spec을 근거로 GitHub Issue 생성
   → docs/plans/YYYYMMDD-NN-<topic>-plan.md 작성
-  → 구현과 테스트
+  → 로컬 dev에서 구현과 테스트
+      ↳ 현재 범위 밖의 구체적인 작업은 needs-triage Issue로 등록
+  → 미공개 commit 재구성과 최종 검증
   → docs/reviews/YYYYMMDD-NN-<topic>-review.md 작성
-  → 완료 판정과 Issue 종료
+  → 로컬 완료 판정과 Issue 종료
+  → 사용자가 push
 ```
 
 GitHub Issue는 실행과 상태 추적을 담당한다. 승인 spec의 저장소 상대 경로를 링크하고 acceptance criteria를 요약하되 spec 전체를 복제하지 않는다.
+
+구현 중 발견한 후속 작업은 승인 spec이 없는 예외다. 현재 acceptance criteria에 필수는 아니지만 문제와 기대 효과를 설명할 수 있으면 `needs-triage` Issue로 즉시 등록한다. 등록은 현재 범위를 확장하지 않는다. 로컬 완료는 push와 분리하며 상세 기준은 `docs/agents/development-workflow.md`와 `docs/agents/issue-tracker.md`를 따른다.
 
 기능 하나에 국한된 설계 결정은 해당 spec에 둔다. 여러 기능이 따라야 하거나 이후 변경에서 반복해 참조할 장기 결정만 `docs/adr/`로 분리한다. 기능 완료 후 현재 제품 계약이나 참조 정보가 바뀌면 관련 `docs/product/` 문서를 갱신한다. 생성 문서는 생성 명령과 수동 편집 가능 여부를 머리말에 명시한다.
 
