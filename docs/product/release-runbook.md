@@ -54,37 +54,44 @@ version을 올릴 때는 세 `package.json`의 `version`을 함께 수정하고 
 pnpm publish:npm
 ```
 
-이 명령은 다음을 순서대로 수행한다.
+`scripts/publish-packages.mjs`가 현재 release version, 두 패키지의 registry 상태와 메뉴를 표시한다.
 
-1. 루트와 두 공개 package version 일치 확인
-2. 작업 트리가 깨끗한지 확인
-3. `pnpm verify` 실행
-4. core OTP 입력 후 `npm publish packages/core/dist --access public`
-5. registry에서 core version 조회 (보고만 하고 배포를 막지 않음)
-6. React OTP 입력 후 `npm publish packages/react/dist --access public`
-7. registry에서 React version과 core exact dependency 조회 (보고만 함)
+```text
+=== @cp949/simple-html-editor 배포 도구 · release 0.1.0 ===
+  core   로컬 0.1.0    registry 0.1.0    배포됨
+  react  로컬 0.1.0    registry 미배포   대상
 
-registry read path는 publish 직후 몇 분 지연될 수 있다. 5단계와 7단계의 조회 실패는 배포 실패가 아니므로 스크립트를 중단시키지 않는다. 반영 후 6장의 명령으로 다시 확인한다.
-
-npm 계정 설정에 따라 인증 방식이 다르다. TOTP 방식이면 npm이 `EOTP`로 거부하므로 코드를 입력한다. 웹 인증 방식이면 npm이 브라우저 인증 URL을 출력하므로 OTP 프롬프트에서 Enter만 누르고 브라우저에서 승인한다. OTP는 약 30초 후 만료되고 조작마다 새 코드가 필요할 수 있으므로 이 명령은 검증이 끝난 뒤 publish 직전에 매번 코드를 입력받는다. 2FA를 쓰지 않으면 입력 없이 Enter를 누른다.
-
-옵션은 `--` 뒤에 전달한다.
-
-```bash
-pnpm publish:npm -- --dry-run       # 두 패키지 dry-run만 실행
-pnpm publish:npm -- --skip-verify   # 직전에 pnpm verify를 통과한 경우
-pnpm publish:npm -- --skip-core     # core가 이미 배포된 상태에서 React만 재개
-pnpm publish:npm -- --otp=123456    # 비대화형 환경에서 코드 직접 전달
+  1) core 배포                   npm publish packages/core/dist --access public
+  2) react 배포                  npm publish packages/react/dist --access public
+  3) core -> react 순서대로 배포
+  4) 두 패키지 dry-run
+  5) 전체 검증                   pnpm verify
+  6) registry 상태 새로고침
+  7) 배포 결과 확인              version과 React의 core dependency
+  8) 빌드                        pnpm build
+  q) 종료
 ```
 
-`--otp`는 두 publish에 같은 코드를 사용한다. npm이 재사용을 거부하면 대화형 입력을 사용한다.
+메뉴는 실행할 `npm` 명령을 그대로 출력한 뒤 실행한다. 인증은 npm CLI가 처리한다. 계정이 TOTP 방식이면 npm이 `EOTP`로 거부하므로 `--otp=<코드>`를 붙인 명령을 직접 실행하고, 웹 인증 방식이면 npm이 브라우저 인증 URL을 출력한다.
+
+배포 순서는 core, React다. 3번은 core 배포가 성공한 경우에만 React로 넘어간다. core만 배포된 상태에서 재개하려면 2번을 선택한다.
+
+registry read path는 publish 직후 몇 분 지연될 수 있다. 배포 직후 상태가 `미배포`로 보이면 6번으로 다시 조회한다. 조회 실패는 배포 실패가 아니다.
+
+메뉴 없이 실행하려면 동작 인자를 지정한다.
+
+```bash
+pnpm publish:npm -- --core        # core만 배포
+pnpm publish:npm -- --react       # React만 배포
+pnpm publish:npm -- --both        # core -> React 순서
+pnpm publish:npm -- --react --dry-run
+```
 
 수동으로 실행하려면 같은 순서를 지킨다.
 
 ```bash
-npm publish packages/core/dist --access public --otp=<코드>
-npm view @cp949/simple-html-editor-core@<version> version
-npm publish packages/react/dist --access public --otp=<새코드>
+npm publish packages/core/dist --access public
+npm publish packages/react/dist --access public
 ```
 
 ## 6. 배포 후 확인
@@ -100,8 +107,8 @@ React의 `dependencies["@cp949/simple-html-editor-core"]`가 범위 없는 같�
 
 npm은 두 패키지 publish를 하나의 원자적 transaction으로 제공하지 않는다.
 
-- core 배포 후 React 배포가 실패하면 core version을 제거하거나 다른 version으로 바꾸지 않고 같은 version의 React 배포를 재시도한다. `pnpm publish:npm`은 이 상황에서 재시도 명령을 출력하고 중단한다.
-- core만 배포된 상태에서 재개하려면 `pnpm publish:npm -- --skip-core`를 사용한다. core를 다시 배포하려 하면 npm이 `EPUBLISHCONFLICT`로 거부한다.
+- core 배포 후 React 배포가 실패하면 core version을 제거하거나 다른 version으로 바꾸지 않고 같은 version의 React 배포를 재시도한다. 메뉴는 실패한 명령을 다시 출력한다.
+- core만 배포된 상태에서 재개하려면 메뉴 2번 또는 `pnpm publish:npm -- --react`를 사용한다. core를 다시 배포하려 하면 npm이 `EPUBLISHCONFLICT`로 거부한다.
 - 같은 version으로 완료할 수 없는 결함이면 두 패키지에 다음 version을 발급해 함께 배포하고 불완전한 version을 deprecate한다.
 
 위험도: 중간
