@@ -79,3 +79,58 @@ test('unsafe HTML을 불러오면 실행 가능한 markup을 제거한다', asyn
   await expect(editor.locator('[onclick]')).toHaveCount(0);
   await expect(editor.locator('a[href^="javascript:"]')).toHaveCount(0);
 });
+
+test('이미지를 drag resize하고 저장한 너비로 다시 불러온다', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '이미지 fixture 불러오기' }).click();
+
+  const editor = page.getByRole('textbox', { name: 'HTML 편집 내용' });
+  const image = editor.getByRole('img', { name: '크기 조절 demo 이미지' });
+  await expect(image).toBeVisible();
+  const before = await image.boundingBox();
+  expect(before).not.toBeNull();
+
+  await image.click();
+  const handle = page.getByRole('button', { name: '이미지 크기 조절' });
+  await expect(handle).toBeVisible();
+
+  await editor.locator('p').filter({ hasText: '이미지 추가 버튼' }).click();
+  await expect(handle).toBeHidden();
+  await image.click();
+  await expect(handle).toBeVisible();
+
+  const handleBox = await handle.boundingBox();
+  expect(handleBox).not.toBeNull();
+
+  await page.mouse.move(
+    (handleBox?.x ?? 0) + (handleBox?.width ?? 0) / 2,
+    (handleBox?.y ?? 0) + (handleBox?.height ?? 0) / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move((handleBox?.x ?? 0) + 100, (handleBox?.y ?? 0) + 5);
+  await page.mouse.up();
+  await expect(handle).toBeVisible();
+
+  const resized = await image.boundingBox();
+  expect(resized).not.toBeNull();
+  expect(Math.round(resized?.width ?? 0)).toBeGreaterThan(Math.round(before?.width ?? 0));
+  expect(Math.round((resized?.width ?? 1) / (resized?.height ?? 1))).toBe(
+    Math.round((before?.width ?? 1) / (before?.height ?? 1)),
+  );
+
+  await page.getByRole('button', { name: '서버에 저장' }).click();
+  const savedHtml = page.getByLabel('서버 저장 HTML');
+  await expect(savedHtml).toContainText(/width="[2-9][0-9]{2}"/);
+  await expect(savedHtml).not.toContainText('height="');
+  await expect(savedHtml).not.toContainText('editor-simple__image');
+  const savedWidth = Math.round(resized?.width ?? 0);
+
+  await editor.press('Control+End');
+  await editor.pressSequentially('저장 이후 변경');
+  await page.getByRole('button', { name: '저장값 다시 불러오기' }).click();
+
+  await expect(image).toBeVisible();
+  await expect
+    .poll(async () => Math.round((await image.boundingBox())?.width ?? 0))
+    .toBe(savedWidth);
+});

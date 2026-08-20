@@ -17,6 +17,20 @@ function requireElement<T extends Element>(element: T | null, description: strin
   return element;
 }
 
+function rect(width: number): DOMRect {
+  return {
+    bottom: 100,
+    height: 100,
+    left: 0,
+    right: width,
+    top: 0,
+    width,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  };
+}
+
 describe('demo App', () => {
   beforeEach(() => {
     vi.stubGlobal('alert', vi.fn());
@@ -32,6 +46,7 @@ describe('demo App', () => {
     expect(await screen.findByText('음성인식(STT)은')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '이미지 fixture 불러오기' }));
     expect(screen.getByText('data URL 이미지')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '크기 조절 demo 이미지' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '서버에서 불러오기' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '서버에 저장' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '저장값 다시 불러오기' })).toBeInTheDocument();
@@ -68,6 +83,45 @@ describe('demo App', () => {
 
     await waitFor(() => expect(editor).toHaveTextContent('서버에 저장할 현재값'));
     expect(editor).not.toHaveTextContent('저장 뒤의 현재값');
+  });
+
+  it('이미지를 resize하면 저장 가능해지고 저장 width를 다시 불러온다', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '이미지 fixture 불러오기' }));
+    const editor = await screen.findByRole('textbox');
+    const image = (await screen.findByRole('img', {
+      name: '크기 조절 demo 이미지',
+    })) as HTMLImageElement;
+    vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(rect(500));
+    vi.spyOn(image, 'getBoundingClientRect').mockReturnValue(rect(160));
+    fireEvent.load(image);
+    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 41 });
+    const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
+    Object.assign(handle, {
+      hasPointerCapture: () => true,
+      releasePointerCapture: vi.fn(),
+      setPointerCapture: vi.fn(),
+    });
+
+    fireEvent.pointerDown(handle, {
+      button: 0,
+      clientX: 100,
+      isPrimary: true,
+      pointerId: 41,
+    });
+    fireEvent.pointerUp(handle, { clientX: 200, isPrimary: true, pointerId: 41 });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '서버에 저장' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: '서버에 저장' }));
+    await waitFor(() => expect(getServerSnapshot()).toHaveTextContent('width="260"'));
+    expect(getServerSnapshot()).not.toHaveTextContent('editor-simple__image');
+
+    fireEvent.click(screen.getByRole('button', { name: 'intro fixture 불러오기' }));
+    await waitFor(() => expect(editor).toHaveTextContent('음성인식(STT)은'));
+    fireEvent.click(screen.getByRole('button', { name: '저장값 다시 불러오기' }));
+
+    const reloadedImage = await screen.findByRole('img', { name: '크기 조절 demo 이미지' });
+    expect(reloadedImage.closest('.editor-simple__image')).toHaveStyle({ width: '260px' });
   });
 
   it('raw intro fixture는 안전 본문을 표시하고 첫 편집 전에는 저장을 막는다', async () => {

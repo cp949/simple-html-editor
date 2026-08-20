@@ -16,6 +16,7 @@ describe('editor-simple stylesheet', () => {
     expect(stylesheet).toContain('.editor-simple');
     expect(stylesheet).toContain('.editor-simple__toolbar');
     expect(stylesheet).toContain('.editor-simple__content');
+    expect(stylesheet).toContain('.editor-simple__image-resize-handle');
     expect(stylesheet).toMatch(/\.editor-simple__toolbar\s*\{[^}]*flex-wrap\s*:\s*wrap/s);
     expect(stylesheet).toMatch(/\.editor-simple__content\s+(?:th|td)[^{]*\{[^}]*border/s);
     expect(stylesheet).toMatch(/button:focus-visible[^}]*outline/s);

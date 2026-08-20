@@ -1,5 +1,5 @@
 import { Editor, type JSONContent } from '@tiptap/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createHtmlEditorExtensions } from '../src/extensions';
 
@@ -69,6 +69,18 @@ afterEach(() => {
 });
 
 describe('HTML round-trip', () => {
+  it('주입한 private image NodeView renderer를 같은 image schema에 연결한다', () => {
+    const renderer = vi.fn(() => ({ dom: document.createElement('img') }));
+    const editor = new Editor({
+      content: '<img src="https://cdn.example.com/node-view.png" width="320">',
+      extensions: createHtmlEditorExtensions(renderer),
+    });
+    editors.push(editor);
+
+    expect(renderer).toHaveBeenCalledTimes(1);
+    expect(editor.getHTML()).toContain('width="320"');
+  });
+
   it('위험 source를 모두 제거하면서 안전 본문은 보존한다', () => {
     const source = `
       <p onclick="alert('event')" style="color: #0047b2; background-image: url(https://evil.example/a); font-size: 72px">안전 본문</p>

@@ -25,6 +25,7 @@ export const formattingHtml = `
 export const imageInstructionsHtml = `
   <h2>data URL 이미지</h2>
   <p>이미지 추가 버튼에서 파일을 고르거나 <code>data:image/png;base64,...</code> 형식의 bitmap data URL을 붙여 넣으세요.</p>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" alt="크기 조절 demo 이미지" width="160">
 `;
 
 /** 표 조작 control을 확인하는 입력 */

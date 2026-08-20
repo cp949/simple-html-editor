@@ -1,11 +1,15 @@
 import { createHtmlEditorExtensions, isEditorDocumentEmpty } from '@cp949/editor-simple-core';
 import Placeholder from '@tiptap/extension-placeholder';
+import { AllSelection, NodeSelection, Selection } from '@tiptap/pm/state';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 import { Toolbar } from './Toolbar';
+import { createImageNodeViewRenderer } from './createImageNodeViewRenderer';
 import type { HtmlEditorHandle, HtmlEditorProps } from './types';
 import { useImageInsertion } from './useImageInsertion';
+
+const imageNodeViewRenderer = createImageNodeViewRenderer();
 
 /** 외부 HTML 값과 사용자 편집을 연결하는 제어형 편집기다. */
 export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function HtmlEditor(
@@ -17,7 +21,7 @@ export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      ...createHtmlEditorExtensions(),
+      ...createHtmlEditorExtensions(imageNodeViewRenderer),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
     ],
     content: value ?? '',
@@ -44,6 +48,18 @@ export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function
   );
 
   useEffect(() => {
+    if (editor && readOnly && editor.state.selection instanceof NodeSelection) {
+      const nearbySelection = Selection.near(
+        editor.state.doc.resolve(editor.state.selection.from),
+        -1,
+      );
+      const selection =
+        nearbySelection instanceof NodeSelection
+          ? new AllSelection(editor.state.doc)
+          : nearbySelection;
+      editor.view.dispatch(editor.state.tr.setSelection(selection));
+    }
+
     editor?.setEditable(!readOnly, false);
 
     if (editor) {
@@ -60,6 +76,13 @@ export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function
     editor.view.dom.setAttribute('aria-label', 'HTML 편집 내용');
     editor.view.dom.setAttribute('aria-multiline', 'true');
   }, [editor]);
+
+  useEffect(
+    () => () => {
+      editor?.destroy();
+    },
+    [editor],
+  );
 
   useEffect(() => {
     const externalValueChanged = lastReceivedExternalValueRef.current !== value;

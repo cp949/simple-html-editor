@@ -20,6 +20,7 @@ const packageJson = {
 const distDirectory = resolve(import.meta.dirname, '../dist');
 const declarationsToRemove = [
   'compatibility.d.ts',
+  'createImageNodeViewRenderer.d.ts',
   'HtmlEditor.d.ts',
   'TableControls.d.ts',
   'Toolbar.d.ts',

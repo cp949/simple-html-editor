@@ -1,4 +1,5 @@
 import Image from '@tiptap/extension-image';
+import type { NodeViewRenderer } from '@tiptap/core';
 
 import { isAllowedImageSrc } from './html-policy';
 
@@ -438,3 +439,16 @@ export const SafeImage = Image.extend({
     return ['img', attributes];
   },
 }).configure({ allowBase64: true, HTMLAttributes: {} });
+
+/** 같은 image schema에 소비 module의 private NodeView renderer만 연결한다. */
+export function createSafeImage(imageNodeViewRenderer?: NodeViewRenderer): typeof SafeImage {
+  if (!imageNodeViewRenderer) {
+    return SafeImage;
+  }
+
+  return SafeImage.extend({
+    addNodeView() {
+      return imageNodeViewRenderer;
+    },
+  });
+}
