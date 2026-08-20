@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".bundle/**"]
+    },
+    "@cp949/editor-simple-consumer#build": {
+      "dependsOn": ["@cp949/editor-simple#build"],
+      "outputs": ["dist/**"]
+    },
+    "@cp949/editor-simple-consumer-react18#build": {
+      "dependsOn": ["@cp949/editor-simple#build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

@@ -1,0 +1,393 @@
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createHtmlEditorExtensions } from '@cp949/editor-simple-core';
+import type { Editor } from '@tiptap/core';
+import { EditorContent, useEditor } from '@tiptap/react';
+import { useEffect } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { HtmlEditor } from '../src';
+import { Toolbar } from '../src/Toolbar';
+
+function getTextNode(element: HTMLElement, selector: string): Text {
+  const textNode = element.querySelector(selector)?.firstChild;
+
+  if (!(textNode instanceof Text)) {
+    throw new Error(`${selector}의 텍스트를 찾을 수 없습니다.`);
+  }
+
+  return textNode;
+}
+
+/** 렌더링된 텍스트와 같은 실제 ProseMirror 문서 범위를 선택한다. */
+function selectText(
+  editor: Editor,
+  fromNode: Text,
+  from = 0,
+  toNode = fromNode,
+  to = toNode.length,
+): void {
+  let fromPosition: number | undefined;
+  let toPosition: number | undefined;
+
+  editor.state.doc.descendants((node, position) => {
+    if (!node.isText) {
+      return;
+    }
+
+    if (node.text === fromNode.data && fromPosition === undefined) {
+      fromPosition = position + from;
+    }
+
+    if (node.text === toNode.data && toPosition === undefined) {
+      toPosition = position + to;
+    }
+  });
+
+  if (fromPosition === undefined || toPosition === undefined) {
+    throw new Error('선택할 편집기 텍스트를 찾을 수 없습니다.');
+  }
+
+  const selection = { from: fromPosition, to: toPosition };
+
+  act(() => {
+    editor.commands.focus();
+    editor.commands.setTextSelection(selection);
+  });
+}
+
+/** 편집기 안의 첫 문단 텍스트를 선택한다. */
+function selectParagraphText(editor: Editor, editorElement: HTMLElement): void {
+  selectText(editor, getTextNode(editorElement, 'p'));
+}
+
+/** 편집기 전체의 첫 텍스트부터 마지막 텍스트까지 선택한다. */
+function selectAllText(editor: Editor, editorElement: HTMLElement): void {
+  const textNodes = Array.from(editorElement.querySelectorAll('p')).map(
+    (paragraph) => paragraph.firstChild as Text,
+  );
+  const firstTextNode = textNodes[0];
+  const lastTextNode = textNodes[textNodes.length - 1];
+  if (!firstTextNode || !lastTextNode) {
+    throw new Error('전체 선택에 필요한 편집기 텍스트를 찾을 수 없습니다.');
+  }
+  selectText(editor, firstTextNode, 0, lastTextNode);
+}
+
+/** 내부 Toolbar가 실제 Tiptap 문서를 조작하도록 렌더링한다. */
+function ToolbarHarness({
+  value,
+  onEditor,
+}: {
+  value: string;
+  onEditor: (editor: Editor) => void;
+}) {
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: createHtmlEditorExtensions(),
+    content: value,
+  });
+
+  useEffect(() => {
+    if (editor) {
+      onEditor(editor);
+    }
+  }, [editor, onEditor]);
+
+  return editor ? (
+    <>
+      <Toolbar editor={editor} readOnly={false} />
+      <EditorContent editor={editor} />
+    </>
+  ) : null;
+}
+
+/** Toolbar와 실제 editor를 함께 준비한다. */
+async function renderToolbar(value: string): Promise<{ editor: Editor; element: HTMLElement }> {
+  let resolvedEditor: Editor | undefined;
+  render(
+    <ToolbarHarness
+      value={value}
+      onEditor={(editor) => {
+        resolvedEditor = editor;
+      }}
+    />,
+  );
+  const element = await screen.findByRole('textbox');
+  await waitFor(() => expect(resolvedEditor).toBeDefined());
+
+  if (!resolvedEditor) {
+    throw new Error('Toolbar editor를 준비하지 못했습니다.');
+  }
+
+  return { editor: resolvedEditor, element };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('HtmlEditor toolbar', () => {
+  it('readOnly이면 모든 toolbar control이 비활성이고 문서를 바꾸지 않는다', async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<HtmlEditor value="<p>읽기 전용</p>" onChange={onChange} />);
+    const editor = await screen.findByRole('textbox');
+    const commandLabels = [
+      '문단',
+      '제목 1',
+      '제목 2',
+      '제목 3',
+      '제목 4',
+      '굵게',
+      '기울임',
+      '밑줄',
+      '취소선',
+      '인용구',
+      '번호 목록',
+      '글머리 목록',
+      '들여쓰기',
+      '내어쓰기',
+      '왼쪽 정렬',
+      '가운데 정렬',
+      '오른쪽 정렬',
+      '링크 설정',
+      '링크 제거',
+      '글자색 제거',
+      '서식 지우기',
+    ];
+    const before = editor.innerHTML;
+
+    rerender(<HtmlEditor value="<p>읽기 전용</p>" onChange={onChange} readOnly />);
+
+    await waitFor(() => {
+      for (const label of commandLabels) {
+        expect(screen.getByRole('button', { name: label })).toBeDisabled();
+      }
+      expect(screen.getByLabelText('글자색')).toBeDisabled();
+    });
+    onChange.mockClear();
+
+    for (const label of commandLabels) {
+      fireEvent.click(screen.getByRole('button', { name: label }));
+    }
+    fireEvent.change(screen.getByLabelText('글자색'), { target: { value: '#ff0000' } });
+
+    expect(editor.innerHTML).toBe(before);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('기본 문단은 왼쪽 정렬을 활성으로 알리고 가운데 정렬 후 상태를 갱신한다', async () => {
+    render(<HtmlEditor value="<p>기본 정렬</p>" onChange={vi.fn()} />);
+    const editor = await screen.findByRole('textbox');
+
+    expect(screen.getByRole('button', { name: '왼쪽 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '가운데 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: '오른쪽 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '가운데 정렬' }));
+
+    await waitFor(() => expect(editor.querySelector('p')).toHaveStyle({ textAlign: 'center' }));
+    expect(screen.getByRole('button', { name: '왼쪽 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: '가운데 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: '오른쪽 정렬' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('공개 HtmlEditor가 접근 가능한 editor 소유 toolbar를 렌더링한다', async () => {
+    render(<HtmlEditor value="<p>도구</p>" onChange={vi.fn()} />);
+
+    expect(await screen.findByRole('toolbar', { name: '서식 도구' })).toBeInTheDocument();
+    for (const label of [
+      '문단',
+      '제목 1',
+      '제목 2',
+      '제목 3',
+      '제목 4',
+      '굵게',
+      '기울임',
+      '밑줄',
+      '취소선',
+      '인용구',
+      '번호 목록',
+      '글머리 목록',
+      '들여쓰기',
+      '내어쓰기',
+      '왼쪽 정렬',
+      '가운데 정렬',
+      '오른쪽 정렬',
+      '링크 설정',
+      '링크 제거',
+      '글자색 제거',
+      '서식 지우기',
+    ]) {
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText('글자색')).toHaveAttribute('type', 'color');
+  });
+
+  it('문단, 제목, 인라인 서식과 인용구의 실제 문서를 바꾸고 활성 상태를 표시한다', async () => {
+    const { editor, element } = await renderToolbar('<p>서식 대상</p>');
+
+    selectParagraphText(editor, element);
+    fireEvent.click(screen.getByRole('button', { name: '제목 2' }));
+    await waitFor(() => expect(element.innerHTML).toContain('<h2>서식 대상</h2>'));
+    expect(screen.getByRole('button', { name: '제목 2' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: '굵게' }));
+    await waitFor(() => expect(element.innerHTML).toContain('<strong>서식 대상</strong>'));
+    expect(screen.getByRole('button', { name: '굵게' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: '기울임' }));
+    await waitFor(() => expect(element.innerHTML).toContain('<em>서식 대상</em>'));
+    fireEvent.click(screen.getByRole('button', { name: '밑줄' }));
+    await waitFor(() => expect(element.innerHTML).toContain('<u>서식 대상</u>'));
+    fireEvent.click(screen.getByRole('button', { name: '취소선' }));
+    await waitFor(() => expect(element.querySelector('s')).toHaveTextContent('서식 대상'));
+
+    fireEvent.click(screen.getByRole('button', { name: '문단' }));
+    await waitFor(() => expect(element.querySelector('p')).toHaveTextContent('서식 대상'));
+    fireEvent.click(screen.getByRole('button', { name: '인용구' }));
+    await waitFor(() =>
+      expect(element.querySelector('blockquote p')).toHaveTextContent('서식 대상'),
+    );
+    expect(screen.getByRole('button', { name: '인용구' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('나머지 제목 단계를 실제 heading으로 전환한다', async () => {
+    const { editor, element } = await renderToolbar('<p>제목</p>');
+
+    for (const [label, tag] of [
+      ['제목 1', 'h1'],
+      ['제목 2', 'h2'],
+      ['제목 3', 'h3'],
+      ['제목 4', 'h4'],
+    ] as const) {
+      selectText(editor, getTextNode(element, 'h1, h2, h3, h4, p'));
+      fireEvent.click(screen.getByRole('button', { name: label }));
+      await waitFor(() => expect(element.querySelector(tag)).toHaveTextContent('제목'));
+      expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  it('목록, 들여쓰기와 내어쓰기가 선택한 문서 구조를 바꾼다', async () => {
+    const { editor, element } = await renderToolbar('<p>첫째</p><p>둘째</p>');
+    selectAllText(editor, element);
+
+    fireEvent.click(screen.getByRole('button', { name: '글머리 목록' }));
+    await waitFor(() =>
+      expect(element.innerHTML).toContain('<ul><li><p>첫째</p></li><li><p>둘째</p></li></ul>'),
+    );
+    expect(screen.getByRole('button', { name: '글머리 목록' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    selectText(editor, element.querySelectorAll('p')[1].firstChild as Text);
+    fireEvent.click(screen.getByRole('button', { name: '들여쓰기' }));
+    await waitFor(() =>
+      expect(element.innerHTML).toContain(
+        '<ul><li><p>첫째</p><ul><li><p>둘째</p></li></ul></li></ul>',
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: '내어쓰기' }));
+    await waitFor(() =>
+      expect(element.innerHTML).toContain('<ul><li><p>첫째</p></li><li><p>둘째</p></li></ul>'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '번호 목록' }));
+    await waitFor(() =>
+      expect(element.innerHTML).toContain('<ol><li><p>첫째</p></li><li><p>둘째</p></li></ol>'),
+    );
+    expect(screen.getByRole('button', { name: '번호 목록' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('정렬 버튼이 선택 문단의 정렬과 활성 상태를 바꾼다', async () => {
+    const { editor, element } = await renderToolbar('<p>정렬</p>');
+    selectParagraphText(editor, element);
+
+    for (const [label, alignment] of [
+      ['왼쪽 정렬', 'left'],
+      ['가운데 정렬', 'center'],
+      ['오른쪽 정렬', 'right'],
+    ] as const) {
+      fireEvent.click(screen.getByRole('button', { name: label }));
+      await waitFor(() => expect(element.querySelector('p')).toHaveStyle({ textAlign: alignment }));
+      expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  it('글자색 입력과 제거가 선택한 실제 텍스트의 style을 바꾼다', async () => {
+    const { editor, element } = await renderToolbar('<p>색상</p>');
+    selectParagraphText(editor, element);
+
+    fireEvent.change(screen.getByLabelText('글자색'), { target: { value: '#ff0000' } });
+    await waitFor(() => expect(element.innerHTML).toContain('style="color: #ff0000;"'));
+    fireEvent.click(screen.getByRole('button', { name: '글자색 제거' }));
+    await waitFor(() => expect(element.innerHTML).not.toContain('color:'));
+  });
+
+  it('유효한 링크를 실제 문서에 추가하고 현재 주소를 prefill한 뒤 제거한다', async () => {
+    const prompt = vi.fn().mockReturnValueOnce('https://example.com/path').mockReturnValueOnce('');
+    vi.stubGlobal('prompt', prompt);
+    const { editor, element } = await renderToolbar('<p>링크</p>');
+    selectParagraphText(editor, element);
+
+    fireEvent.click(screen.getByRole('button', { name: '링크 설정' }));
+    await waitFor(() =>
+      expect(element.innerHTML).toContain('<a href="https://example.com/path">링크</a>'),
+    );
+    expect(screen.getByRole('button', { name: '링크 설정' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '링크 설정' }));
+    expect(prompt).toHaveBeenLastCalledWith('링크 주소', 'https://example.com/path');
+    await waitFor(() => expect(element.innerHTML).not.toContain('<a '));
+  });
+
+  it('허용하지 않은 링크 입력은 문서를 바꾸지 않는다', async () => {
+    vi.stubGlobal(
+      'prompt',
+      vi.fn(() => 'javascript:alert(1)'),
+    );
+    const { editor, element } = await renderToolbar('<p>안전</p>');
+    selectParagraphText(editor, element);
+    const before = element.innerHTML;
+
+    fireEvent.click(screen.getByRole('button', { name: '링크 설정' }));
+
+    await act(async () => {});
+    expect(element.innerHTML).toBe(before);
+  });
+
+  it('서식 지우기가 선택 텍스트의 mark를 모두 제거한다', async () => {
+    const { editor, element } = await renderToolbar(
+      '<p><strong><em><span style="color: #ff0000">지우기</span></em></strong></p>',
+    );
+    selectText(editor, getTextNode(element, 'em'));
+
+    fireEvent.click(screen.getByRole('button', { name: '서식 지우기' }));
+
+    await waitFor(() => expect(element.innerHTML).toBe('<p>지우기</p>'));
+  });
+});

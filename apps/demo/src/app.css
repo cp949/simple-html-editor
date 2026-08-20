@@ -1,0 +1,68 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #1f2937;
+  background: #f3f4f6;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.demo-page {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.demo-page__header,
+.demo-page__fixtures,
+.demo-page__editor,
+.demo-page__status {
+  margin-bottom: 1.5rem;
+}
+
+.demo-page__eyebrow {
+  margin: 0;
+  color: #0047b2;
+  font-weight: 700;
+}
+
+.demo-page h1,
+.demo-page h2 {
+  margin: 0.5rem 0;
+}
+
+.demo-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0.5rem -0.25rem;
+}
+
+.demo-page__actions > button {
+  margin: 0.25rem;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #0047b2;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  color: #0047b2;
+  cursor: pointer;
+}
+
+.demo-page__actions button:focus {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.demo-page__actions button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.demo-page__actions button:focus:not(:focus-visible) {
+  outline: none;
+}

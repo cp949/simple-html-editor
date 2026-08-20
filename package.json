@@ -1,0 +1,45 @@
+{
+  "name": "simple-html-editor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "check:biome": "biome check .",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "check:gate-tests": "node --test scripts/test/*.test.mjs",
+    "check:boundaries": "node scripts/check-package-boundaries.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "audit:prod": "node scripts/check-audit.mjs --prod",
+    "audit:full": "node scripts/check-audit.mjs --full",
+    "verify": "pnpm check:biome && pnpm build && pnpm typecheck && pnpm test && pnpm check:gate-tests && pnpm check:boundaries && pnpm check:dist && pnpm check:licenses && pnpm audit:prod && pnpm audit:full"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.9",
+    "@playwright/test": "^1.62.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "acorn": "^8.18.0",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.11.6",
+    "turbo": "^2.10.11",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  }
+}

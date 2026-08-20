@@ -1,0 +1,19 @@
+{
+  "name": "@cp949/editor-simple-consumer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build --ssr src/consumer.tsx --outDir dist --emptyOutDir",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "dependencies": {
+    "@cp949/editor-simple": "link:../../packages/react/dist",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^6.0.3"
+  }
+}
