@@ -17,6 +17,8 @@
 
 `.superpowers/`는 필요할 경우 ignored runtime cache나 중간 snapshot에만 사용한다. 권위 문서, 승인 spec, 구현 plan 또는 최종 review를 `.superpowers/`나 `docs/superpowers/`에 새로 작성하지 않는다.
 
+공개 문서와 GitHub 산출물의 기밀 식별자 정책은 `docs/agents/confidentiality.md`를 따른다.
+
 ## 작업 문서 파일명
 
 날짜가 있는 작업 문서는 `YYYYMMDD-NN-<topic>-<kind>.md` 형식을 사용한다.

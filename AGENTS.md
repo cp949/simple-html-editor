@@ -10,6 +10,10 @@
 
 이슈는 `cp949/simple-html-editor`의 GitHub Issues에서 관리한다. 자세한 내용은 `docs/agents/issue-tracker.md`를 참고한다.
 
+### 기밀 정보
+
+공개 저장소와 GitHub 산출물에는 사내 프로젝트를 식별할 수 있는 정보를 기록하지 않는다. 자세한 내용은 `docs/agents/confidentiality.md`를 참고한다.
+
 ### Triage 라벨
 
 이 저장소에서는 다섯 가지 표준 triage 라벨을 사용한다. 자세한 내용은 `docs/agents/triage-labels.md`를 참고한다.
