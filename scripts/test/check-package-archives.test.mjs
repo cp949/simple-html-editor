@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { assertArchiveVersions, assertPackedFiles } from '../check-package-archives.mjs';
+import {
+  assertArchiveVersions,
+  assertPackedFiles,
+  packageInstallArguments,
+} from '../check-package-archives.mjs';
 
 test('React pack allowlist 밖의 파일을 거부한다', () => {
   assert.throws(
@@ -39,4 +43,11 @@ test('정확한 core와 React pack file set을 허용한다', () => {
   assert.doesNotThrow(() =>
     assertPackedFiles('react', ['index.d.ts', 'index.js', 'package.json', 'styles.css']),
   );
+});
+
+test('격리 소비 설치는 registry fallback을 허용하지 않는다', () => {
+  const args = packageInstallArguments('/tmp/package-store');
+  assert.ok(args.includes('--offline'));
+  assert.ok(!args.includes('--prefer-offline'));
+  assert.deepEqual(args.slice(-2), ['--store-dir', '/tmp/package-store']);
 });

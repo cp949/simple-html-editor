@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -107,7 +107,31 @@ async function writeJson(file, value) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-async function installScenario(root, relativeDirectory, manifest, overrides = {}) {
+export function packageInstallArguments(storeDirectory) {
+  return ['install', '--offline', '--ignore-scripts', '--store-dir', storeDirectory];
+}
+
+async function preparePackageStore(root) {
+  const fetchRoot = path.join(root, 'fetch');
+  const storeDirectory = path.join(root, 'store');
+  await mkdir(fetchRoot, { recursive: true });
+  await copyFile(
+    path.join(workspaceRoot, 'pnpm-lock.yaml'),
+    path.join(fetchRoot, 'pnpm-lock.yaml'),
+  );
+  await copyFile(
+    path.join(workspaceRoot, 'pnpm-workspace.yaml'),
+    path.join(fetchRoot, 'pnpm-workspace.yaml'),
+  );
+  run(
+    'pnpm',
+    ['fetch', '--frozen-lockfile', '--ignore-scripts', '--store-dir', storeDirectory],
+    fetchRoot,
+  );
+  return storeDirectory;
+}
+
+async function installScenario(root, relativeDirectory, manifest, storeDirectory, overrides = {}) {
   await mkdir(root, { recursive: true });
   const overrideLines = Object.entries(overrides).map(
     ([name, value]) => `  ${JSON.stringify(name)}: ${JSON.stringify(value)}`,
@@ -119,22 +143,27 @@ async function installScenario(root, relativeDirectory, manifest, overrides = {}
   const directory = path.join(root, relativeDirectory);
   await mkdir(directory, { recursive: true });
   await writeJson(path.join(directory, 'package.json'), manifest);
-  run('pnpm', ['install', '--prefer-offline', '--ignore-scripts'], directory);
+  run('pnpm', packageInstallArguments(storeDirectory), directory);
   return directory;
 }
 
-async function checkCoreConsumer(root, coreArchive) {
-  const directory = await installScenario(root, 'packages/core', {
-    name: 'core-archive-consumer',
-    private: true,
-    type: 'module',
-    dependencies: {
-      '@cp949/simple-html-editor-core': `file:${coreArchive}`,
+async function checkCoreConsumer(root, coreArchive, storeDirectory) {
+  const directory = await installScenario(
+    root,
+    'packages/core',
+    {
+      name: 'core-archive-consumer',
+      private: true,
+      type: 'module',
+      dependencies: {
+        '@cp949/simple-html-editor-core': `file:${coreArchive}`,
+      },
+      devDependencies: {
+        typescript: '6.0.3',
+      },
     },
-    devDependencies: {
-      typescript: '6.0.3',
-    },
-  });
+    storeDirectory,
+  );
   await writeJson(path.join(directory, 'tsconfig.json'), {
     compilerOptions: {
       module: 'NodeNext',
@@ -175,7 +204,7 @@ if (!isAllowedLinkHref('/relative')) throw new Error('link policy import failed'
   console.log('core archive isolated consumption passed');
 }
 
-async function checkReactConsumer(root, archives, scenario) {
+async function checkReactConsumer(root, archives, scenario, storeDirectory) {
   const fixtureDirectory =
     scenario.label === 'React 18' ? 'fixtures/consumer-react18' : 'fixtures/consumer';
   const directory = await installScenario(
@@ -197,6 +226,7 @@ async function checkReactConsumer(root, archives, scenario) {
         typescript: '6.0.3',
       },
     },
+    storeDirectory,
     { '@cp949/simple-html-editor-core': `file:${archives.core}` },
   );
   await writeJson(path.join(directory, 'tsconfig.json'), {
@@ -250,8 +280,9 @@ async function main() {
   try {
     const core = createArchive('core', temporaryRoot);
     const react = createArchive('react', temporaryRoot);
+    const storeDirectory = await preparePackageStore(temporaryRoot);
     assertArchiveVersions({ core: core.version, react: react.version });
-    await checkCoreConsumer(path.join(temporaryRoot, 'core-scenario'), core.path);
+    await checkCoreConsumer(path.join(temporaryRoot, 'core-scenario'), core.path, storeDirectory);
     for (const scenario of [
       {
         label: 'React 18',
@@ -272,6 +303,7 @@ async function main() {
         path.join(temporaryRoot, `${scenario.label.toLowerCase().replace(' ', '-')}-scenario`),
         { core: core.path, react: react.path },
         scenario,
+        storeDirectory,
       );
     }
   } finally {

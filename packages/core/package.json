@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "vite build && tsc --project tsconfig.build.json && node scripts/write-dist-package.mjs",
+    "prepublishOnly": "node ../../scripts/block-source-publish.mjs",
     "test": "vitest run --root ../.. packages/core/test",
     "typecheck": "tsc --project tsconfig.json"
   },

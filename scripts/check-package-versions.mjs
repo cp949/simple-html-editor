@@ -6,6 +6,9 @@ const expectedNames = {
   core: '@cp949/simple-html-editor-core',
   react: '@cp949/simple-html-editor-react',
 };
+const publishGuard = 'node ../../scripts/block-source-publish.mjs';
+const semverPattern =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
 async function readManifest(relativePath) {
   const file = path.join(root, relativePath);
@@ -28,6 +31,12 @@ async function check() {
     react: reactManifest.version,
   };
 
+  for (const [label, version] of Object.entries(versions)) {
+    if (typeof version !== 'string' || !semverPattern.test(version)) {
+      failures.push(`${label} release version must be valid SemVer: ${version}`);
+    }
+  }
+
   if (new Set(Object.values(versions)).size !== 1) {
     failures.push(
       `release versions must match: root=${versions.root}, core=${versions.core}, react=${versions.react}`,
@@ -43,6 +52,9 @@ async function check() {
     }
     if (manifest.private === true || manifest.publishConfig?.access !== 'public') {
       failures.push(`packages/${label} must be publishable with publishConfig.access=public`);
+    }
+    if (manifest.scripts?.prepublishOnly !== publishGuard) {
+      failures.push(`packages/${label} prepublishOnly must block source-root publication`);
     }
   }
 

@@ -6,12 +6,15 @@ import path from 'node:path';
 import test from 'node:test';
 
 const checker = path.resolve('scripts/check-package-versions.mjs');
+const publishGuard = 'node ../../scripts/block-source-publish.mjs';
 
 async function createWorkspace({
   corePrivate,
+  corePrepublishOnly = publishGuard,
   coreSpecifier = 'workspace:*',
   coreVersion = '0.1.0',
   reactPrivate,
+  reactPrepublishOnly = publishGuard,
   reactVersion = '0.1.0',
   rootVersion = '0.1.0',
 } = {}) {
@@ -27,12 +30,14 @@ async function createWorkspace({
       version: coreVersion,
       ...(corePrivate === undefined ? {} : { private: corePrivate }),
       publishConfig: { access: 'public' },
+      scripts: corePrepublishOnly === null ? {} : { prepublishOnly: corePrepublishOnly },
     },
     'packages/react/package.json': {
       name: '@cp949/simple-html-editor-react',
       version: reactVersion,
       ...(reactPrivate === undefined ? {} : { private: reactPrivate }),
       publishConfig: { access: 'public' },
+      scripts: reactPrepublishOnly === null ? {} : { prepublishOnly: reactPrepublishOnly },
       dependencies: {
         '@cp949/simple-html-editor-core': coreSpecifier,
       },
@@ -86,6 +91,22 @@ test('React의 workspace core dependency는 workspace star만 허용한다', asy
     assert.notEqual(status, 0);
     assert.match(stderr, /React core dependency must be workspace:\*/);
   });
+});
+
+test('source package의 publish guard 누락을 거부한다', async () => {
+  await withWorkspace({ corePrepublishOnly: null }, ({ status, stderr }) => {
+    assert.notEqual(status, 0);
+    assert.match(stderr, /packages\/core prepublishOnly must block source-root publication/);
+  });
+});
+
+test('누락되거나 유효하지 않은 release version을 거부한다', async () => {
+  for (const rootVersion of [null, 'release-1']) {
+    await withWorkspace({ rootVersion }, ({ status, stderr }) => {
+      assert.notEqual(status, 0);
+      assert.match(stderr, /root release version must be valid SemVer/);
+    });
+  }
 });
 
 test('동일 version의 두 공개 package 계약은 통과한다', async () => {
