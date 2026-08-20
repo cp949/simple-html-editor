@@ -166,6 +166,28 @@ describe('HtmlEditor', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('readOnly 전환은 image가 아닌 node selection을 보존한다', async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <HtmlEditor
+        value={'<img src="https://cdn.example.com/selected.png" alt="교체 전 image"><p>뒤</p>'}
+        onChange={onChange}
+      />,
+    );
+    const image = await screen.findByRole('img', { name: '교체 전 image' });
+    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 6 });
+
+    rerender(<HtmlEditor value="<hr><p>뒤</p>" onChange={onChange} />);
+    const horizontalRule = await waitFor(() => {
+      const element = getEditor().querySelector('hr.ProseMirror-selectednode');
+      return requireElement(element, '교체 후 node selection');
+    });
+
+    rerender(<HtmlEditor value="<hr><p>뒤</p>" onChange={onChange} readOnly />);
+
+    await waitFor(() => expect(horizontalRule).toHaveClass('ProseMirror-selectednode'));
+  });
+
   it('load된 이미지를 선택하면 handle을 표시하고 active drag 중 node 교체 시 정리한다', async () => {
     const onChange = vi.fn();
     const { container, rerender } = render(
@@ -401,6 +423,45 @@ describe('HtmlEditor', () => {
       );
     },
   );
+
+  it('편집면 border-box에서 padding과 border를 제외한 content width로 clamp한다', async () => {
+    const onChange = vi.fn();
+    render(
+      <HtmlEditor
+        value={
+          '<img src="https://cdn.example.com/resize.png" alt="content width 대상" width="200">'
+        }
+        onChange={onChange}
+      />,
+    );
+    const editor = await screen.findByRole('textbox');
+    const image = (await screen.findByRole('img', {
+      name: 'content width 대상',
+    })) as HTMLImageElement;
+    editor.style.paddingLeft = '10px';
+    editor.style.paddingRight = '15px';
+    editor.style.borderLeft = '4px solid black';
+    editor.style.borderRight = '6px solid black';
+    vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(rect(500));
+    vi.spyOn(image, 'getBoundingClientRect').mockReturnValue(rect(200));
+    fireEvent.load(image);
+    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 14 });
+    const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
+    enablePointerCapture(handle);
+    onChange.mockClear();
+
+    fireEvent.pointerDown(handle, {
+      button: 0,
+      clientX: 100,
+      isPrimary: true,
+      pointerId: 14,
+    });
+    fireEvent.pointerUp(handle, { clientX: 1_000, isPrimary: true, pointerId: 14 });
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('width="465"')),
+    );
+  });
 
   it('다른 pointer와 cancel 뒤 late event를 무시하고 preview를 복원한다', async () => {
     const onChange = vi.fn();

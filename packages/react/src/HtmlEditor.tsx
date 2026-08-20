@@ -48,7 +48,12 @@ export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function
   );
 
   useEffect(() => {
-    if (editor && readOnly && editor.state.selection instanceof NodeSelection) {
+    if (
+      editor &&
+      readOnly &&
+      editor.state.selection instanceof NodeSelection &&
+      editor.state.selection.node.type.name === 'image'
+    ) {
       const nearbySelection = Selection.near(
         editor.state.doc.resolve(editor.state.selection.from),
         -1,

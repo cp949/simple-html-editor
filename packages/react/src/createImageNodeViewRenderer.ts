@@ -18,10 +18,18 @@ type DragSession = {
 function editorContentWidth(element: HTMLElement): number {
   const width = element.getBoundingClientRect().width;
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
-  const horizontalPadding =
-    Number.parseFloat(style?.paddingLeft ?? '0') + Number.parseFloat(style?.paddingRight ?? '0');
+  const horizontalEdges = [
+    style?.paddingLeft,
+    style?.paddingRight,
+    style?.borderLeftWidth,
+    style?.borderRightWidth,
+  ].reduce((total, value) => {
+    const pixels = Number.parseFloat(value ?? '0');
 
-  return Math.max(0, width - (Number.isFinite(horizontalPadding) ? horizontalPadding : 0));
+    return total + (Number.isFinite(pixels) ? pixels : 0);
+  }, 0);
+
+  return Math.max(0, width - horizontalEdges);
 }
 
 function applyAlignment(element: HTMLElement, alignment: ImageAlignment): void {
