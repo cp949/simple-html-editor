@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { assertDistFileSet, checkDist } from './check-dist.mjs';
+import { assertDistFileSet, assertReactBundleBoundary, checkDist } from './check-dist.mjs';
 
 const requiredFiles = ['index.js', 'index.d.ts', 'styles.css', 'package.json'] as const;
 const coreRequiredFiles = [
@@ -22,7 +22,10 @@ async function createFixture(): Promise<string> {
   return directory;
 }
 
-async function createValidDistFixture(indexJavaScript: string): Promise<string> {
+async function createValidDistFixture(
+  indexJavaScript: string,
+  { coreVersion = '0.1.0', version = '0.1.0' } = {},
+): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'editor-simple-valid-dist-'));
   await Promise.all([
     writeFile(join(directory, 'index.js'), indexJavaScript),
@@ -32,7 +35,7 @@ async function createValidDistFixture(indexJavaScript: string): Promise<string> 
       join(directory, 'package.json'),
       JSON.stringify({
         name: '@cp949/simple-html-editor-react',
-        version: '0.1.0',
+        version,
         type: 'module',
         main: './index.js',
         types: './index.d.ts',
@@ -43,6 +46,9 @@ async function createValidDistFixture(indexJavaScript: string): Promise<string> 
         peerDependencies: {
           react: '>=18.3.0 <20',
           'react-dom': '>=18.3.0 <20',
+        },
+        dependencies: {
+          '@cp949/simple-html-editor-core': coreVersion,
         },
       }),
     ),
@@ -151,6 +157,29 @@ describe('core dist 계약', () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+});
+
+test('React dist는 자신의 version과 다른 core dependency를 거부한다', async () => {
+  const directory = await createValidDistFixture('export const value = 1\n', {
+    coreVersion: '0.1.1',
+  });
+
+  try {
+    await expect(checkDist({ kind: 'react', directory })).rejects.toThrow(
+      'core dependency must equal React version',
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('React bundle에 core source가 포함되면 거부한다', () => {
+  expect(() =>
+    assertReactBundleBoundary({
+      modules: ['packages/core/src/index.ts'],
+      externalImports: [],
+    }),
+  ).toThrow('React bundle must externalize @cp949/simple-html-editor-core');
 });
 
 // Production break: ES2019 post-transform이 제거되어도 dist 검사가 통과한다.

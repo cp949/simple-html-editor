@@ -1,9 +1,34 @@
 import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+const rootDirectory = resolve(import.meta.dirname, '../../..');
+const rootManifest = JSON.parse(await readFile(resolve(rootDirectory, 'package.json'), 'utf8'));
+const coreManifest = JSON.parse(
+  await readFile(resolve(rootDirectory, 'packages/core/package.json'), 'utf8'),
+);
+const reactManifest = JSON.parse(
+  await readFile(resolve(rootDirectory, 'packages/react/package.json'), 'utf8'),
+);
+const versions = [rootManifest.version, coreManifest.version, reactManifest.version];
+
+if (new Set(versions).size !== 1) {
+  throw new Error(`root/core/react version이 다릅니다: ${versions.join(', ')}`);
+}
+
+const dependencies = {
+  ...reactManifest.dependencies,
+  '@cp949/simple-html-editor-core': rootManifest.version,
+};
+
+for (const [name, specifier] of Object.entries(dependencies)) {
+  if (specifier.startsWith('workspace:')) {
+    throw new Error(`React dependency에 workspace specifier가 남았습니다: ${name}`);
+  }
+}
+
 const packageJson = {
   name: '@cp949/simple-html-editor-react',
-  version: '0.1.0',
+  version: rootManifest.version,
   type: 'module',
   main: './index.js',
   types: './index.d.ts',
@@ -11,10 +36,9 @@ const packageJson = {
     '.': { types: './index.d.ts', import: './index.js' },
     './styles.css': './styles.css',
   },
-  peerDependencies: {
-    react: '>=18.3.0 <20',
-    'react-dom': '>=18.3.0 <20',
-  },
+  dependencies,
+  peerDependencies: reactManifest.peerDependencies,
+  publishConfig: { access: 'public' },
 };
 
 const distDirectory = resolve(import.meta.dirname, '../dist');

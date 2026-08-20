@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { cp, mkdir, mkdtemp, realpath, rm, symlink } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { Window } from 'happy-dom';
@@ -24,6 +24,16 @@ function descriptorMetadata(descriptor) {
 }
 
 const workspaceRoot = resolve(import.meta.dirname, '..');
+const coreManifest = JSON.parse(
+  await readFile(resolve(workspaceRoot, 'packages/core/package.json'), 'utf8'),
+);
+const reactManifest = JSON.parse(
+  await readFile(resolve(workspaceRoot, 'packages/react/package.json'), 'utf8'),
+);
+const productionDependencies = new Set([
+  ...Object.keys(coreManifest.dependencies ?? {}),
+  ...Object.keys(reactManifest.dependencies ?? {}),
+]);
 const runtimeScenarios = [
   {
     label: 'React 18',
@@ -36,14 +46,73 @@ const runtimeScenarios = [
 ];
 
 async function runRuntimeScenario({ label, peerRoot }) {
-  const isolatedRoot = await mkdtemp(join(tmpdir(), `editor-simple-${label}-runtime-`));
+  const isolatedRoot = await mkdtemp(join(tmpdir(), `simple-html-editor-${label}-runtime-`));
   const cleanupIsolatedRoot = () => rmSync(isolatedRoot, { recursive: true, force: true });
   process.once('exit', cleanupIsolatedRoot);
-  const isolatedPackage = join(isolatedRoot, 'editor-simple');
+  const isolatedPackage = join(isolatedRoot, 'simple-html-editor-react');
   const isolatedNodeModules = join(isolatedRoot, 'node_modules');
 
   await cp(join(workspaceRoot, 'packages/react/dist'), isolatedPackage, { recursive: true });
   await mkdir(isolatedNodeModules);
+  const isolatedCore = join(isolatedNodeModules, '@cp949/simple-html-editor-core');
+  await mkdir(dirname(isolatedCore), { recursive: true });
+  await cp(join(workspaceRoot, 'packages/core/dist'), isolatedCore, { recursive: true });
+
+  const installedDependencies = new Set();
+
+  async function installDependency(dependency, dependencyTarget) {
+    if (installedDependencies.has(dependency)) return;
+    installedDependencies.add(dependency);
+
+    const dependencyLink = join(isolatedNodeModules, dependency);
+    await mkdir(dirname(dependencyLink), { recursive: true });
+    // pnpm store symlink를 그대로 사용하면 React 18 scenario도 React 19 peer snapshot을 따라간다.
+    // package 내용을 복사해 각 격리 node_modules의 React peer를 해석하게 한다.
+    await cp(dependencyTarget, dependencyLink, { recursive: true });
+
+    const dependencyManifest = JSON.parse(
+      await readFile(join(dependencyTarget, 'package.json'), 'utf8'),
+    );
+    const sourceNodeModules = resolve(
+      dependencyTarget,
+      dependency.startsWith('@') ? '../..' : '..',
+    );
+    const requiredDependencies = Object.keys(dependencyManifest.dependencies ?? {});
+    const optionalDependencies = Object.keys(dependencyManifest.optionalDependencies ?? {});
+
+    for (const childDependency of [...requiredDependencies, ...optionalDependencies]) {
+      if (childDependency === 'react' || childDependency === 'react-dom') continue;
+      let childTarget;
+      try {
+        childTarget = await realpath(join(sourceNodeModules, childDependency));
+      } catch (error) {
+        if (optionalDependencies.includes(childDependency)) continue;
+        throw new Error(
+          `${dependency}의 runtime dependency를 해석할 수 없습니다: ${childDependency}`,
+          { cause: error },
+        );
+      }
+      await installDependency(childDependency, childTarget);
+    }
+  }
+
+  for (const dependency of productionDependencies) {
+    if (dependency === '@cp949/simple-html-editor-core') continue;
+    let dependencyTarget;
+    for (const packageDirectory of ['packages/react', 'packages/core']) {
+      try {
+        dependencyTarget = await realpath(
+          join(workspaceRoot, packageDirectory, 'node_modules', dependency),
+        );
+        break;
+      } catch {
+        // 실제 dependency를 선언한 workspace package를 계속 찾는다.
+      }
+    }
+    if (!dependencyTarget) throw new Error(`설치된 runtime dependency가 없습니다: ${dependency}`);
+    await installDependency(dependency, dependencyTarget);
+  }
+
   for (const peer of ['react', 'react-dom']) {
     const peerTarget = await realpath(join(peerRoot, peer));
     await symlink(peerTarget, join(isolatedNodeModules, peer), 'dir');

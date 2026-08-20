@@ -29,6 +29,20 @@ const contracts = {
   },
 };
 
+export function assertReactBundleBoundary({ modules, externalImports }) {
+  const corePackage = '@cp949/simple-html-editor-core';
+  const bundlesCoreSource = modules.some((moduleId) =>
+    moduleId.replaceAll('\\', '/').startsWith('packages/core/'),
+  );
+  const externalizesCore = externalImports.some(
+    (specifier) => specifier === corePackage || specifier.startsWith(`${corePackage}/`),
+  );
+
+  if (bundlesCoreSource || !externalizesCore) {
+    throw new Error(`React bundle must externalize ${corePackage}`);
+  }
+}
+
 export async function assertDistFileSet(directory, requiredFiles = contracts.react.requiredFiles) {
   const entries = await readdir(directory, { withFileTypes: true });
 
@@ -136,6 +150,12 @@ async function assertPackageMetadata(directory, kind) {
   }
 
   if (kind === 'react') {
+    const coreVersion = packageJson.dependencies?.['@cp949/simple-html-editor-core'];
+    if (coreVersion !== packageJson.version) {
+      throw new Error(
+        `React dist core dependency must equal React version: ${coreVersion} != ${packageJson.version}`,
+      );
+    }
     if (packageJson.exports?.['./styles.css'] !== './styles.css') {
       throw new Error('dist/package.json의 "./styles.css" export가 없습니다.');
     }
@@ -168,7 +188,15 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const selectedKind = packageIndex === -1 ? undefined : process.argv[packageIndex + 1];
   const kinds = selectedKind ? [selectedKind] : ['core', 'react'];
 
-  for (const kind of kinds) await checkDist({ kind });
+  for (const kind of kinds) {
+    await checkDist({ kind });
+    if (kind === 'react') {
+      const metadata = JSON.parse(
+        await readFile(join(rootDirectory, 'packages/react/.bundle/bundle-modules.json'), 'utf8'),
+      );
+      assertReactBundleBoundary(metadata);
+    }
+  }
   if (kinds.includes('react')) await import('./check-dist-runtime.mjs');
   console.log('dist 계약 검사 통과');
 }

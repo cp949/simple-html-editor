@@ -1,17 +1,25 @@
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
-import { defineConfig, esmExternalRequirePlugin, transformWithEsbuild } from 'vite';
+import { defineConfig, esmExternalRequirePlugin, transformWithOxc } from 'vite';
+
+import packageJson from './package.json' with { type: 'json' };
 
 const entryFile = resolve(import.meta.dirname, 'src/index.ts');
 const rootDirectory = resolve(import.meta.dirname, '../..');
 const bundleMetadataFile = resolve(import.meta.dirname, '.bundle/bundle-modules.json');
 const compareStrings = (left: string, right: string) => (left < right ? -1 : left > right ? 1 : 0);
+const externalPackages = [
+  ...Object.keys(packageJson.dependencies ?? {}),
+  ...Object.keys(packageJson.peerDependencies ?? {}),
+];
+const isExternal = (id: string) =>
+  externalPackages.some((name) => id === name || id.startsWith(`${name}/`));
 
 export default defineConfig({
   plugins: [
     esmExternalRequirePlugin({
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: externalPackages,
     }),
     {
       name: 'editor-simple-styles',
@@ -28,10 +36,10 @@ export default defineConfig({
             continue;
           }
 
-          const transformed = await transformWithEsbuild(output.code, output.fileName, {
+          const transformed = await transformWithOxc(output.code, output.fileName, {
             target: 'es2019',
-            format: 'esm',
-            minify: false,
+            lang: 'js',
+            sourceType: 'module',
             sourcemap: false,
           });
           output.code = transformed.code;
@@ -95,6 +103,9 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'index.js',
       cssFileName: 'styles',
+    },
+    rollupOptions: {
+      external: isExternal,
     },
   },
 });
