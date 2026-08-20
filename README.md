@@ -118,7 +118,7 @@ packages/react/dist   index.js, index.d.ts, styles.css, package.json,
 전체 검증 -> core publish -> registry의 core version 확인 -> react publish -> 이름/버전/의존성 확인
 ```
 
-npm은 두 패키지 publish를 원자적 transaction으로 제공하지 않는다. core 배포 후 React 배포가 실패하면 core version을 제거하지 않고 같은 version으로 재시도한다. 같은 version으로 완료할 수 없으면 두 패키지에 다음 version을 발급해 함께 배포하고 불완전한 version을 deprecate한다. 자세한 내용은 [공개 패키지 이름과 동기 배포 설계](docs/specs/20260821-02-public-package-names-design.md)를 참고한다.
+npm은 두 패키지 publish를 원자적 transaction으로 제공하지 않는다. core 배포 후 React 배포가 실패하면 core version을 제거하지 않고 같은 version으로 재시도한다. 같은 version으로 완료할 수 없으면 두 패키지에 다음 version을 발급해 함께 배포하고 불완전한 version을 deprecate한다. 배포 명령과 실패 처리는 [배포 실행 절차](docs/product/release-runbook.md)에, 설계 근거는 [공개 패키지 이름과 동기 배포 설계](docs/specs/20260821-02-public-package-names-design.md)에 있다.
 
 ## 문서
 

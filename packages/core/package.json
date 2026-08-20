@@ -3,6 +3,22 @@
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
+  "description": "React에 의존하지 않는 HTML 편집기 정책과 Tiptap extension 집합",
+  "keywords": [
+    "html",
+    "editor",
+    "wysiwyg",
+    "tiptap",
+    "prosemirror",
+    "headless"
+  ],
+  "homepage": "https://github.com/cp949/simple-html-editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cp949/simple-html-editor.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/cp949/simple-html-editor/issues",
   "publishConfig": {
     "access": "public"
   },

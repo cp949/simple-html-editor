@@ -4,6 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
+  "description": "서버 HTML을 불러와 편집하고 정규화 HTML로 돌려주는 React WYSIWYG 편집기 라이브러리",
+  "homepage": "https://github.com/cp949/simple-html-editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cp949/simple-html-editor.git"
+  },
+  "bugs": "https://github.com/cp949/simple-html-editor/issues",
   "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": ">=22.13"

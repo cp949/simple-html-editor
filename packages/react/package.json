@@ -3,6 +3,22 @@
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
+  "description": "서버 HTML을 불러와 편집하고 정규화 HTML로 돌려주는 React 제어형 WYSIWYG 편집기",
+  "keywords": [
+    "html",
+    "editor",
+    "wysiwyg",
+    "react",
+    "tiptap",
+    "prosemirror"
+  ],
+  "homepage": "https://github.com/cp949/simple-html-editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cp949/simple-html-editor.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/cp949/simple-html-editor/issues",
   "publishConfig": {
     "access": "public"
   },

@@ -138,6 +138,24 @@ async function assertPackageMetadata(directory, kind) {
     }
   }
 
+  for (const field of ['description', 'homepage', 'bugs']) {
+    if (typeof packageJson[field] !== 'string' || packageJson[field].trim() === '') {
+      throw new Error(`dist/package.json ${field}가 비어 있습니다.`);
+    }
+  }
+
+  if (!Array.isArray(packageJson.keywords) || packageJson.keywords.length === 0) {
+    throw new Error('dist/package.json keywords가 비어 있습니다.');
+  }
+
+  if (packageJson.repository?.url !== 'git+https://github.com/cp949/simple-html-editor.git') {
+    throw new Error('dist/package.json repository.url이 공개 저장소를 가리키지 않습니다.');
+  }
+
+  if (packageJson.repository?.directory !== `packages/${kind}`) {
+    throw new Error(`dist/package.json repository.directory가 packages/${kind}가 아닙니다.`);
+  }
+
   const rootExport = packageJson.exports?.['.'];
   if (rootExport?.types !== './index.d.ts' || rootExport?.import !== './index.js') {
     throw new Error('dist/package.json의 "." export가 JavaScript와 타입 선언을 제공하지 않습니다.');

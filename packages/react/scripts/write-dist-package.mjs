@@ -31,6 +31,11 @@ const packageJson = {
   version: rootManifest.version,
   type: 'module',
   license: 'MIT',
+  description: reactManifest.description,
+  keywords: reactManifest.keywords,
+  homepage: reactManifest.homepage,
+  repository: reactManifest.repository,
+  bugs: reactManifest.bugs,
   main: './index.js',
   types: './index.d.ts',
   exports: {
