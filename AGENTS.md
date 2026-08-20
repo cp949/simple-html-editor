@@ -10,6 +10,12 @@ pnpm lint:fix && pnpm format
 
 명령이 성공한 뒤 커밋 대상만 stage하고, `git diff --cached`와 `git diff --cached --check`를 확인한 후 커밋한다. 명령이 실패하면 커밋하지 않고 실패 원인을 보고한다.
 
+## 개발 작업 흐름
+
+모든 구현은 단일 로컬 `dev`에서 진행하고 worktree와 기능별 branch를 만들지 않는다. 특별한 지시가 없으면 push는 사용자가 수행한다.
+
+구현 중 발견한 현재 범위 밖의 구체적인 작업은 GitHub Issue에 `needs-triage`로 등록하고 현재 구현 범위를 확장하지 않는다. checkpoint commit, 최종 commit 재구성과 로컬 완료 판정은 `docs/agents/development-workflow.md`를 따른다.
+
 ## Agent skills
 
 ### 공통 문서 구조
