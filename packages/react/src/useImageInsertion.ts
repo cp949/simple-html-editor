@@ -1,4 +1,4 @@
-import { isAllowedImageSrc } from '@cp949/editor-simple-core';
+import { isAllowedImageSrc } from '@cp949/simple-html-editor-core';
 import type { Editor } from '@tiptap/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

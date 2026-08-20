@@ -1,4 +1,4 @@
-import { isAllowedLinkHref, selectedImageAlignment } from '@cp949/editor-simple-core';
+import { isAllowedLinkHref, selectedImageAlignment } from '@cp949/simple-html-editor-core';
 import type { Editor } from '@tiptap/core';
 import {
   AlignCenter,

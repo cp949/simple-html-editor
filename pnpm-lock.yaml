@@ -56,7 +56,7 @@ importers:
 
   apps/demo:
     dependencies:
-      '@cp949/editor-simple':
+      '@cp949/simple-html-editor-react':
         specifier: workspace:*
         version: link:../../packages/react
       react:
@@ -72,7 +72,7 @@ importers:
 
   fixtures/consumer:
     dependencies:
-      '@cp949/editor-simple':
+      '@cp949/simple-html-editor-react':
         specifier: link:../../packages/react/dist
         version: link:../../packages/react/dist
       react:
@@ -94,7 +94,7 @@ importers:
 
   fixtures/consumer-react18:
     dependencies:
-      '@cp949/editor-simple':
+      '@cp949/simple-html-editor-react':
         specifier: link:../../packages/react/dist
         version: link:../../packages/react/dist
       react:
@@ -156,7 +156,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@cp949/editor-simple-core':
+      '@cp949/simple-html-editor-core':
         specifier: workspace:*
         version: link:../core
       '@tiptap/core':

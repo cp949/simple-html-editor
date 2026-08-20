@@ -1,8 +1,10 @@
 {
-  "name": "@cp949/editor-simple",
+  "name": "@cp949/simple-html-editor-react",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css"
@@ -13,7 +15,7 @@
     "typecheck": "tsc --project tsconfig.json"
   },
   "dependencies": {
-    "@cp949/editor-simple-core": "workspace:*",
+    "@cp949/simple-html-editor-core": "workspace:*",
     "@tiptap/core": "^3.30.2",
     "@tiptap/extension-placeholder": "^3.30.2",
     "@tiptap/pm": "^3.30.2",

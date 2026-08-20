@@ -72,7 +72,7 @@ async function assertPackageMetadata(directory) {
   const packageJson = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'));
 
   const expectedFields = {
-    name: '@cp949/editor-simple',
+    name: '@cp949/simple-html-editor-react',
     version: '0.1.0',
     type: 'module',
     main: './index.js',

@@ -19,14 +19,14 @@ async function createWorkspace({
   const root = await mkdtemp(path.join(tmpdir(), 'editor-boundaries-'));
   const manifests = {
     'packages/core': {
-      name: '@cp949/editor-simple-core',
+      name: '@cp949/simple-html-editor-core',
       private: true,
       dependencies: dependencies.core ?? {},
     },
     'packages/react': {
-      name: '@cp949/editor-simple',
+      name: '@cp949/simple-html-editor-react',
       dependencies: {
-        '@cp949/editor-simple-core': 'workspace:*',
+        '@cp949/simple-html-editor-core': 'workspace:*',
         ...(dependencies.react ?? {}),
       },
       peerDependencies: {
@@ -35,26 +35,26 @@ async function createWorkspace({
       },
     },
     'apps/demo': {
-      name: '@cp949/editor-simple-demo',
+      name: '@cp949/simple-html-editor-demo',
       private: true,
       dependencies: {
-        '@cp949/editor-simple': 'workspace:*',
+        '@cp949/simple-html-editor-react': 'workspace:*',
         ...(dependencies.demo ?? {}),
       },
     },
     'fixtures/consumer': {
-      name: '@cp949/editor-simple-consumer',
+      name: '@cp949/simple-html-editor-consumer',
       private: true,
       dependencies: {
-        '@cp949/editor-simple': 'workspace:*',
+        '@cp949/simple-html-editor-react': 'workspace:*',
         ...(dependencies.consumerReact19 ?? {}),
       },
     },
     'fixtures/consumer-react18': {
-      name: '@cp949/editor-simple-consumer-react18',
+      name: '@cp949/simple-html-editor-consumer-react18',
       private: true,
       dependencies: {
-        '@cp949/editor-simple': 'workspace:*',
+        '@cp949/simple-html-editor-react': 'workspace:*',
         ...(dependencies.consumerReact18 ?? {}),
       },
     },
@@ -93,7 +93,7 @@ async function createWorkspace({
     path.join(dist, 'package.json'),
     `${JSON.stringify(
       {
-        name: '@cp949/editor-simple',
+        name: '@cp949/simple-html-editor-react',
         types: './index.d.ts',
         exports: { '.': { types: './index.d.ts', import: './index.js' } },
       },
@@ -130,7 +130,7 @@ test('core -> react 의존성을 거부한다', async () => {
   await withWorkspace(
     {
       dependencies: {
-        core: { '@cp949/editor-simple': 'workspace:*' },
+        core: { '@cp949/simple-html-editor-react': 'workspace:*' },
       },
     },
     ({ status, stderr }) => {
@@ -145,7 +145,7 @@ test('demo -> core 의존성을 거부한다', async () => {
   await withWorkspace(
     {
       dependencies: {
-        demo: { '@cp949/editor-simple-core': 'workspace:*' },
+        demo: { '@cp949/simple-html-editor-core': 'workspace:*' },
       },
     },
     ({ status, stderr }) => {
@@ -160,7 +160,7 @@ test('consumer React 19 -> core 의존성을 거부한다', async () => {
   await withWorkspace(
     {
       dependencies: {
-        consumerReact19: { '@cp949/editor-simple-core': 'workspace:*' },
+        consumerReact19: { '@cp949/simple-html-editor-core': 'workspace:*' },
       },
     },
     ({ status, stderr }) => {
@@ -227,7 +227,7 @@ test('react -> core 필수 edge 누락을 거부한다', async () => {
   await withWorkspace(
     {
       mutateManifests: (manifests) => {
-        delete manifests['packages/react'].dependencies['@cp949/editor-simple-core'];
+        delete manifests['packages/react'].dependencies['@cp949/simple-html-editor-core'];
       },
     },
     ({ status, stderr }) => {
@@ -242,7 +242,7 @@ test('demo -> react 필수 edge 누락을 거부한다', async () => {
   await withWorkspace(
     {
       mutateManifests: (manifests) => {
-        delete manifests['apps/demo'].dependencies['@cp949/editor-simple'];
+        delete manifests['apps/demo'].dependencies['@cp949/simple-html-editor-react'];
       },
     },
     ({ status, stderr }) => {
@@ -257,7 +257,7 @@ test('consumer React 19 -> react 필수 edge 누락을 거부한다', async () =
   await withWorkspace(
     {
       mutateManifests: (manifests) => {
-        delete manifests['fixtures/consumer'].dependencies['@cp949/editor-simple'];
+        delete manifests['fixtures/consumer'].dependencies['@cp949/simple-html-editor-react'];
       },
     },
     ({ status, stderr }) => {
@@ -287,7 +287,9 @@ test('consumer React 18 -> react 필수 edge 누락을 거부한다', async () =
   await withWorkspace(
     {
       mutateManifests: (manifests) => {
-        delete manifests['fixtures/consumer-react18'].dependencies['@cp949/editor-simple'];
+        delete manifests['fixtures/consumer-react18'].dependencies[
+          '@cp949/simple-html-editor-react'
+        ];
       },
     },
     ({ status, stderr }) => {

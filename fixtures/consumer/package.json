@@ -1,5 +1,5 @@
 {
-  "name": "@cp949/editor-simple-consumer",
+  "name": "@cp949/simple-html-editor-consumer",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,7 +7,7 @@
     "typecheck": "tsc --project tsconfig.json"
   },
   "dependencies": {
-    "@cp949/editor-simple": "link:../../packages/react/dist",
+    "@cp949/simple-html-editor-react": "link:../../packages/react/dist",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

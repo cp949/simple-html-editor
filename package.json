@@ -10,7 +10,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "demo": "pnpm --filter @cp949/editor-simple-demo dev",
+    "demo": "pnpm --filter @cp949/simple-html-editor-demo dev",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
@@ -19,12 +19,13 @@
     "typecheck": "turbo run typecheck",
     "test": "vitest run",
     "check:gate-tests": "node --test scripts/test/*.test.mjs",
+    "check:versions": "node scripts/check-package-versions.mjs",
     "check:boundaries": "node scripts/check-package-boundaries.mjs",
     "check:dist": "node scripts/check-dist.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
     "audit:prod": "node scripts/check-audit.mjs --prod",
     "audit:full": "node scripts/check-audit.mjs --full",
-    "verify": "pnpm check:biome && pnpm build && pnpm typecheck && pnpm test && pnpm check:gate-tests && pnpm check:boundaries && pnpm check:dist && pnpm check:licenses && pnpm audit:prod && pnpm audit:full"
+    "verify": "pnpm check:biome && pnpm build && pnpm typecheck && pnpm test && pnpm check:gate-tests && pnpm check:versions && pnpm check:boundaries && pnpm check:dist && pnpm check:licenses && pnpm audit:prod && pnpm audit:full"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9",

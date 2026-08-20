@@ -43,7 +43,7 @@ async function createFixture(packages) {
 
   const nested = new Set(packages.flatMap((entry) => entry.dependencies ?? []));
   const workspaceRoot = {
-    name: '@cp949/editor-simple',
+    name: '@cp949/simple-html-editor-react',
     version: '0.1.0',
     path: path.join(root, 'packages/react'),
     private: true,
@@ -64,7 +64,7 @@ async function createFixture(packages) {
     path.join(root, 'packages/react/package.json'),
     `${JSON.stringify(
       {
-        name: '@cp949/editor-simple',
+        name: '@cp949/simple-html-editor-react',
         version: '0.1.0',
         private: true,
       },
@@ -249,7 +249,7 @@ test('bundle evidence에 있는 build-only package의 금지 라이선스를 거
 
 // Production break: 실제 library build가 bundle module evidence를 만들지 않거나 public dist에 추가 artifact를 남긴다.
 test('실제 build가 4-file dist 밖에 bundle evidence를 생성한다', async () => {
-  const build = spawnSync('pnpm', ['--filter', '@cp949/editor-simple', 'build'], {
+  const build = spawnSync('pnpm', ['--filter', '@cp949/simple-html-editor-react', 'build'], {
     cwd: path.resolve('.'),
     encoding: 'utf8',
   });
@@ -287,11 +287,11 @@ async function createPnpmWorkspaceFixture({ includeForbiddenUnbundled = false } 
         : {},
     },
     'packages/react/package.json': {
-      name: '@cp949/editor-simple',
+      name: '@cp949/simple-html-editor-react',
       version: '0.1.0',
       private: true,
       dependencies: {
-        '@cp949/editor-simple-core': 'workspace:*',
+        '@cp949/simple-html-editor-core': 'workspace:*',
         'direct-package': 'workspace:*',
       },
       devDependencies: {
@@ -303,7 +303,7 @@ async function createPnpmWorkspaceFixture({ includeForbiddenUnbundled = false } 
       },
     },
     'packages/core/package.json': {
-      name: '@cp949/editor-simple-core',
+      name: '@cp949/simple-html-editor-core',
       version: '0.1.0',
       private: true,
       dependencies: {

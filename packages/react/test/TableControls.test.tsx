@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createHtmlEditorExtensions } from '@cp949/editor-simple-core';
+import { createHtmlEditorExtensions } from '@cp949/simple-html-editor-core';
 import type { Editor } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect } from 'react';

@@ -1,4 +1,4 @@
-import { HtmlEditor } from '@cp949/editor-simple';
+import { HtmlEditor } from '@cp949/simple-html-editor-react';
 import { useState } from 'react';
 
 import { demoFixtures, initialServerHtml, type DemoFixture } from './fixtures';
@@ -42,7 +42,7 @@ export function App(): React.JSX.Element {
   return (
     <main className="demo-page">
       <header className="demo-page__header">
-        <p className="demo-page__eyebrow">@cp949/editor-simple</p>
+        <p className="demo-page__eyebrow">@cp949/simple-html-editor-react</p>
         <h1>HTML Editor Demo</h1>
         <p>공개 HtmlEditor와 library-owned stylesheet만 사용한 저장 흐름입니다.</p>
       </header>

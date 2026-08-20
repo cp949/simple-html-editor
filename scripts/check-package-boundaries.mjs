@@ -4,14 +4,14 @@ import ts from 'typescript';
 
 const root = path.resolve(process.argv[2] ?? process.cwd());
 const packages = [
-  ['core', 'packages/core/package.json', '@cp949/editor-simple-core'],
-  ['react', 'packages/react/package.json', '@cp949/editor-simple'],
-  ['demo', 'apps/demo/package.json', '@cp949/editor-simple-demo'],
-  ['consumerReact19', 'fixtures/consumer/package.json', '@cp949/editor-simple-consumer'],
+  ['core', 'packages/core/package.json', '@cp949/simple-html-editor-core'],
+  ['react', 'packages/react/package.json', '@cp949/simple-html-editor-react'],
+  ['demo', 'apps/demo/package.json', '@cp949/simple-html-editor-demo'],
+  ['consumerReact19', 'fixtures/consumer/package.json', '@cp949/simple-html-editor-consumer'],
   [
     'consumerReact18',
     'fixtures/consumer-react18/package.json',
-    '@cp949/editor-simple-consumer-react18',
+    '@cp949/simple-html-editor-consumer-react18',
   ],
 ];
 const dependencySections = [

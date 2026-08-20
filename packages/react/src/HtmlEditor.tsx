@@ -1,4 +1,4 @@
-import { createHtmlEditorExtensions, isEditorDocumentEmpty } from '@cp949/editor-simple-core';
+import { createHtmlEditorExtensions, isEditorDocumentEmpty } from '@cp949/simple-html-editor-core';
 import Placeholder from '@tiptap/extension-placeholder';
 import { AllSelection, NodeSelection, Selection } from '@tiptap/pm/state';
 import { EditorContent, useEditor } from '@tiptap/react';

@@ -22,7 +22,7 @@ async function createValidDistFixture(indexJavaScript: string): Promise<string> 
     writeFile(
       join(directory, 'package.json'),
       JSON.stringify({
-        name: '@cp949/editor-simple',
+        name: '@cp949/simple-html-editor-react',
         version: '0.1.0',
         type: 'module',
         main: './index.js',

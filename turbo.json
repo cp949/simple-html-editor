@@ -5,12 +5,12 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".bundle/**"]
     },
-    "@cp949/editor-simple-consumer#build": {
-      "dependsOn": ["@cp949/editor-simple#build"],
+    "@cp949/simple-html-editor-consumer#build": {
+      "dependsOn": ["@cp949/simple-html-editor-react#build"],
       "outputs": ["dist/**"]
     },
-    "@cp949/editor-simple-consumer-react18#build": {
-      "dependsOn": ["@cp949/editor-simple#build"],
+    "@cp949/simple-html-editor-consumer-react18#build": {
+      "dependsOn": ["@cp949/simple-html-editor-react#build"],
       "outputs": ["dist/**"]
     },
     "typecheck": {

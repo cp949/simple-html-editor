@@ -1,6 +1,6 @@
 import { createElement } from 'react';
-import { HtmlEditor, type HtmlEditorHandle } from '@cp949/editor-simple';
-import '@cp949/editor-simple/styles.css';
+import { HtmlEditor, type HtmlEditorHandle } from '@cp949/simple-html-editor-react';
+import '@cp949/simple-html-editor-react/styles.css';
 
 const handle: HtmlEditorHandle | null = null;
 

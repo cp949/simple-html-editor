@@ -2,7 +2,7 @@ import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const packageJson = {
-  name: '@cp949/editor-simple',
+  name: '@cp949/simple-html-editor-react',
   version: '0.1.0',
   type: 'module',
   main: './index.js',
