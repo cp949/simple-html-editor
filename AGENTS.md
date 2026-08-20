@@ -1,3 +1,15 @@
+## 커밋 전 자동 정리
+
+모든 커밋 직전에 다음 명령을 실행한다.
+
+```bash
+pnpm lint:fix && pnpm format
+```
+
+실행 전후 `git status --short`와 실제 diff를 비교한다. 자동 수정으로 변경 범위가 넓어질 수 있으므로 기존 사용자 변경과 무관한 파일을 임의로 stage하지 않는다.
+
+명령이 성공한 뒤 커밋 대상만 stage하고, `git diff --cached`와 `git diff --cached --check`를 확인한 후 커밋한다. 명령이 실패하면 커밋하지 않고 실패 원인을 보고한다.
+
 ## Agent skills
 
 ### 공통 문서 구조
