@@ -82,9 +82,10 @@ registry read path는 publish 직후 몇 분 지연될 수 있다. 배포 직후
 ```bash
 pnpm publish:npm -- --core        # core만 배포
 pnpm publish:npm -- --react       # React만 배포
-pnpm publish:npm -- --both        # core -> React 순서
 pnpm publish:npm -- --react --dry-run
 ```
+
+두 패키지를 한 동작으로 이어 배포하는 경로는 제공하지 않는다. 중간 실패 시 부분 배포 상태가 되고, registry 반영 지연 때문에 첫 배포 결과를 확인하기 전에 다음 배포가 시작되기 때문이다.
 
 수동으로 실행하려면 같은 순서를 지킨다.
 

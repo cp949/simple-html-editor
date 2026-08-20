@@ -15,7 +15,7 @@ const targets = {
 
 export function parsePublishArguments(argv) {
   const options = { action: 'menu', dryRun: false };
-  const actions = { '--core': 'core', '--react': 'react', '--both': 'both' };
+  const actions = { '--core': 'core', '--react': 'react' };
 
   for (const argument of argv) {
     if (argument === '--dry-run') {
@@ -259,15 +259,9 @@ async function main() {
 
   if (options.action === 'core') return void publishTarget('core', version, options.dryRun);
   if (options.action === 'react') return void publishTarget('react', version, options.dryRun);
-  if (options.action === 'both') {
-    if (publishTarget('core', version, options.dryRun)) {
-      publishTarget('react', version, options.dryRun);
-    }
-    return;
-  }
 
   if (!process.stdin.isTTY) {
-    throw new Error('대화형 메뉴를 쓸 수 없습니다. --core, --react 또는 --both를 지정하세요.');
+    throw new Error('대화형 메뉴를 쓸 수 없습니다. --core 또는 --react를 지정하세요.');
   }
 
   await runMenu(version);

@@ -19,11 +19,15 @@ test('패키지별 동작 인자와 dry-run을 읽는다', () => {
     action: 'react',
     dryRun: true,
   });
-  assert.deepEqual(parsePublishArguments(['--both']), { action: 'both', dryRun: false });
 });
 
 test('알 수 없는 인자를 거부한다', () => {
   assert.throws(() => parsePublishArguments(['--force']), /알 수 없는 인자입니다: --force/);
+});
+
+// 두 패키지를 한 동작으로 이어 배포하는 경로는 제공하지 않는다.
+test('연속 배포 인자를 거부한다', () => {
+  assert.throws(() => parsePublishArguments(['--both']), /알 수 없는 인자입니다: --both/);
 });
 
 test('동작 인자를 두 개 지정하면 거부한다', () => {
