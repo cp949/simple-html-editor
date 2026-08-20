@@ -178,12 +178,11 @@ function printStatus(version, registryVersions, warnings) {
   const items = [
     ['1', 'core 배포', 'npm publish packages/core/dist --access public'],
     ['2', 'react 배포', 'npm publish packages/react/dist --access public'],
-    ['3', 'core -> react 순서대로 배포', ''],
-    ['4', '두 패키지 dry-run', ''],
-    ['5', '전체 검증', 'pnpm verify'],
-    ['6', 'registry 상태 새로고침', ''],
-    ['7', '배포 결과 확인', 'version과 React의 core dependency'],
-    ['8', '빌드', 'pnpm build'],
+    ['3', '두 패키지 dry-run', ''],
+    ['4', '전체 검증', 'pnpm verify'],
+    ['5', 'registry 상태 새로고침', ''],
+    ['6', '배포 결과 확인', 'version과 React의 core dependency'],
+    ['7', '빌드', 'pnpm build'],
     ['q', '종료', ''],
   ];
 
@@ -225,18 +224,16 @@ async function runMenu(version) {
       } else if (choice === '2') {
         publishTarget('react', version, false);
       } else if (choice === '3') {
-        if (publishTarget('core', version, false)) publishTarget('react', version, false);
-      } else if (choice === '4') {
         publishTarget('core', version, true);
         publishTarget('react', version, true);
-      } else if (choice === '5') {
+      } else if (choice === '4') {
         run('pnpm', ['verify']);
-      } else if (choice === '6') {
+      } else if (choice === '5') {
         registryVersions.core = readRegistryVersion(corePackage);
         registryVersions.react = readRegistryVersion(reactPackage);
-      } else if (choice === '7') {
+      } else if (choice === '6') {
         reportPublished(version);
-      } else if (choice === '8') {
+      } else if (choice === '7') {
         run('pnpm', ['build']);
       } else {
         console.log(`알 수 없는 선택입니다: ${choice}`);

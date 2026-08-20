@@ -63,20 +63,19 @@ pnpm publish:npm
 
   1) core 배포                   npm publish packages/core/dist --access public
   2) react 배포                  npm publish packages/react/dist --access public
-  3) core -> react 순서대로 배포
-  4) 두 패키지 dry-run
-  5) 전체 검증                   pnpm verify
-  6) registry 상태 새로고침
-  7) 배포 결과 확인              version과 React의 core dependency
-  8) 빌드                        pnpm build
+  3) 두 패키지 dry-run
+  4) 전체 검증                   pnpm verify
+  5) registry 상태 새로고침
+  6) 배포 결과 확인              version과 React의 core dependency
+  7) 빌드                        pnpm build
   q) 종료
 ```
 
 메뉴는 실행할 `npm` 명령을 그대로 출력한 뒤 실행한다. 인증은 npm CLI가 처리한다. 계정이 TOTP 방식이면 npm이 `EOTP`로 거부하므로 `--otp=<코드>`를 붙인 명령을 직접 실행하고, 웹 인증 방식이면 npm이 브라우저 인증 URL을 출력한다.
 
-배포 순서는 core, React다. 3번은 core 배포가 성공한 경우에만 React로 넘어간다. core만 배포된 상태에서 재개하려면 2번을 선택한다.
+배포 순서는 core, React다. 1번으로 core를 배포하고 성공을 확인한 뒤 2번으로 React를 배포한다. core만 배포된 상태에서 재개할 때도 2번을 선택한다.
 
-registry read path는 publish 직후 몇 분 지연될 수 있다. 배포 직후 상태가 `미배포`로 보이면 6번으로 다시 조회한다. 조회 실패는 배포 실패가 아니다.
+registry read path는 publish 직후 몇 분 지연될 수 있다. 배포 직후 상태가 `미배포`로 보이면 5번으로 다시 조회한다. 조회 실패는 배포 실패가 아니다.
 
 메뉴 없이 실행하려면 동작 인자를 지정한다.
 
