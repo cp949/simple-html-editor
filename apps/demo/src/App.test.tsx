@@ -31,6 +31,31 @@ function rect(width: number): DOMRect {
   };
 }
 
+function resizeSelectedImage(
+  editor: HTMLElement,
+  image: HTMLImageElement,
+  pointerId: number,
+): void {
+  vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(rect(500));
+  vi.spyOn(image, 'getBoundingClientRect').mockReturnValue(rect(160));
+  fireEvent.load(image);
+  fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId });
+  const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
+  Object.assign(handle, {
+    hasPointerCapture: () => true,
+    releasePointerCapture: vi.fn(),
+    setPointerCapture: vi.fn(),
+  });
+
+  fireEvent.pointerDown(handle, {
+    button: 0,
+    clientX: 100,
+    isPrimary: true,
+    pointerId,
+  });
+  fireEvent.pointerUp(handle, { clientX: 200, isPrimary: true, pointerId });
+}
+
 describe('demo App', () => {
   beforeEach(() => {
     vi.stubGlobal('alert', vi.fn());
@@ -92,24 +117,7 @@ describe('demo App', () => {
     const image = (await screen.findByRole('img', {
       name: '크기 조절 demo 이미지',
     })) as HTMLImageElement;
-    vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(rect(500));
-    vi.spyOn(image, 'getBoundingClientRect').mockReturnValue(rect(160));
-    fireEvent.load(image);
-    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 41 });
-    const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
-    Object.assign(handle, {
-      hasPointerCapture: () => true,
-      releasePointerCapture: vi.fn(),
-      setPointerCapture: vi.fn(),
-    });
-
-    fireEvent.pointerDown(handle, {
-      button: 0,
-      clientX: 100,
-      isPrimary: true,
-      pointerId: 41,
-    });
-    fireEvent.pointerUp(handle, { clientX: 200, isPrimary: true, pointerId: 41 });
+    resizeSelectedImage(editor, image, 41);
 
     await waitFor(() => expect(screen.getByRole('button', { name: '서버에 저장' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: '서버에 저장' }));
@@ -123,6 +131,59 @@ describe('demo App', () => {
     const reloadedImage = await screen.findByRole('img', { name: '크기 조절 demo 이미지' });
     expect(reloadedImage.closest('.editor-simple__image')).toHaveStyle({ width: '260px' });
   });
+
+  it.each([
+    { alignmentFirst: false, label: 'resize → alignment', pointerId: 51 },
+    { alignmentFirst: true, label: 'alignment → resize', pointerId: 52 },
+  ])(
+    '$label 순서로 적용한 width와 alignment를 저장·재로드한다',
+    async ({ alignmentFirst, pointerId }) => {
+      render(<App />);
+      fireEvent.click(screen.getByRole('button', { name: '이미지 fixture 불러오기' }));
+      const editor = await screen.findByRole('textbox');
+      const image = (await screen.findByRole('img', {
+        name: '크기 조절 demo 이미지',
+      })) as HTMLImageElement;
+      const centerControl = screen.getByRole('button', { name: '이미지 가운데 정렬' });
+      const alignCenter = async () => {
+        fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId });
+        await waitFor(() => expect(centerControl).toBeEnabled());
+        fireEvent.click(centerControl);
+        await waitFor(() => expect(centerControl).toHaveAttribute('aria-pressed', 'true'));
+      };
+
+      if (alignmentFirst) {
+        await alignCenter();
+        resizeSelectedImage(editor, image, pointerId);
+      } else {
+        resizeSelectedImage(editor, image, pointerId);
+        await alignCenter();
+      }
+
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: '서버에 저장' })).toBeEnabled(),
+      );
+      fireEvent.click(screen.getByRole('button', { name: '서버에 저장' }));
+      await waitFor(() => {
+        const serverSnapshot = getServerSnapshot();
+
+        expect(serverSnapshot).toHaveTextContent('width="260"');
+        expect(serverSnapshot).toHaveTextContent('margin-left: auto');
+        expect(serverSnapshot).toHaveTextContent('margin-right: auto');
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'intro fixture 불러오기' }));
+      await waitFor(() => expect(editor).toHaveTextContent('음성인식(STT)은'));
+      fireEvent.click(screen.getByRole('button', { name: '저장값 다시 불러오기' }));
+
+      const reloadedImage = await screen.findByRole('img', { name: '크기 조절 demo 이미지' });
+      expect(reloadedImage.closest('.editor-simple__image')).toHaveStyle({
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: '260px',
+      });
+    },
+  );
 
   it('raw intro fixture는 안전 본문을 표시하고 첫 편집 전에는 저장을 막는다', async () => {
     render(<App />);

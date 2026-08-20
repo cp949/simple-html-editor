@@ -1,7 +1,10 @@
 import { Editor, type JSONContent } from '@tiptap/core';
+import { undoDepth } from '@tiptap/pm/history';
+import { NodeSelection } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createHtmlEditorExtensions } from '../src/extensions';
+import { selectedImageAlignment } from '../src/image-presentation';
 
 const editors: Editor[] = [];
 
@@ -60,6 +63,27 @@ function insertTextAsUser(editor: Editor, text: string): void {
       editor.view.dispatch(editor.state.tr.insertText(character, from, to));
     }
   }
+}
+
+function selectImage(editor: Editor): number {
+  let imagePosition: number | null = null;
+
+  editor.state.doc.descendants((node, position) => {
+    if (node.type.name === 'image') {
+      imagePosition = position;
+      return false;
+    }
+
+    return true;
+  });
+
+  if (imagePosition === null) {
+    throw new Error('image node를 찾을 수 없습니다.');
+  }
+
+  editor.commands.setNodeSelection(imagePosition);
+
+  return imagePosition;
 }
 
 afterEach(() => {
@@ -464,6 +488,169 @@ describe('HTML round-trip', () => {
       expect(second).toEqual(first);
     },
   );
+
+  it('image NodeSelection에서만 alignment를 바꾸고 presentation과 selection을 보존한다', () => {
+    const editor = createEditor(
+      '<p>본문</p><img src="https://cdn.example.com/command.png" alt="설명" width="320">',
+    );
+    editors.push(editor);
+    const imagePosition = selectImage(editor);
+    const before = editor.getAttributes('image');
+    const selection = { from: editor.state.selection.from, to: editor.state.selection.to };
+
+    expect(editor.state.selection).toBeInstanceOf(NodeSelection);
+    expect(editor.can().setImageAlignment('center')).toBe(true);
+    expect(editor.commands.setImageAlignment('center')).toBe(true);
+    expect(editor.getAttributes('image')).toEqual({ ...before, alignment: 'center' });
+    expect(editor.state.selection).toMatchObject(selection);
+    expect(editor.state.selection.from).toBe(imagePosition);
+  });
+
+  it('selectedImageAlignment는 image NodeSelection에서만 현재 alignment를 알린다', () => {
+    const editor = createEditor(
+      '<table><tbody><tr><td><p>문단</p></td><td><img src="https://cdn.example.com/selection.png" style="margin-left: auto; margin-right: auto"></td></tr></tbody></table>',
+    );
+    editors.push(editor);
+    const cellPositions: number[] = [];
+    let imagePosition = -1;
+
+    editor.state.doc.descendants((node, position) => {
+      if (node.type.name === 'tableCell') {
+        cellPositions.push(position);
+      }
+
+      if (node.type.name === 'image') {
+        imagePosition = position;
+      }
+
+      return true;
+    });
+
+    expect(selectedImageAlignment(editor.state)).toBeNull();
+
+    editor.commands.setCellSelection({
+      anchorCell: cellPositions[0],
+      headCell: cellPositions[1],
+    });
+
+    // head 셀 내용이 image 하나뿐이면 CellSelection 범위가 image node와 겹친다.
+    expect(editor.state.selection.from).toBe(imagePosition);
+    expect(selectedImageAlignment(editor.state)).toBeNull();
+
+    selectImage(editor);
+
+    expect(selectedImageAlignment(editor.state)).toBe('center');
+  });
+
+  it('같은 image alignment는 transaction과 update event 없이 성공하는 no-op이다', () => {
+    const editor = createEditor('<img src="https://cdn.example.com/no-op.png">');
+    editors.push(editor);
+    selectImage(editor);
+    const beforeUndoDepth = undoDepth(editor.state);
+    let transactions = 0;
+    let updates = 0;
+
+    editor.on('transaction', () => {
+      transactions += 1;
+    });
+    editor.on('update', () => {
+      updates += 1;
+    });
+
+    expect(editor.can().setImageAlignment('left')).toBe(true);
+    expect(editor.commands.setImageAlignment('left')).toBe(true);
+    expect(transactions).toBe(0);
+    expect(updates).toBe(0);
+    expect(undoDepth(editor.state)).toBe(beforeUndoDepth);
+  });
+
+  it('같은 image alignment 뒤의 다른 alignment를 하나의 transaction과 undo step으로 적용한다', () => {
+    const editor = createEditor('<img src="https://cdn.example.com/chained-alignment.png">');
+    editors.push(editor);
+    selectImage(editor);
+    const beforeUndoDepth = undoDepth(editor.state);
+    let transactions = 0;
+    let updates = 0;
+
+    editor.on('transaction', () => {
+      transactions += 1;
+    });
+    editor.on('update', () => {
+      updates += 1;
+    });
+
+    expect(editor.chain().setImageAlignment('left').setImageAlignment('right').run()).toBe(true);
+    expect(editor.getAttributes('image').alignment).toBe('right');
+    expect(transactions).toBe(1);
+    expect(updates).toBe(1);
+    expect(undoDepth(editor.state)).toBe(beforeUndoDepth + 1);
+
+    expect(editor.commands.undo()).toBe(true);
+    expect(editor.getAttributes('image').alignment).toBe('left');
+    expect(transactions).toBe(2);
+    expect(updates).toBe(2);
+    expect(undoDepth(editor.state)).toBe(beforeUndoDepth);
+  });
+
+  it('같은 image alignment 뒤의 다른 문서 변경을 transaction과 undo step으로 적용한다', () => {
+    const editor = createEditor('<img src="https://cdn.example.com/chained-mutation.png">');
+    editors.push(editor);
+    selectImage(editor);
+    const before = editor.getHTML();
+    const beforeUndoDepth = undoDepth(editor.state);
+    let transactions = 0;
+    let updates = 0;
+
+    editor.on('transaction', () => {
+      transactions += 1;
+    });
+    editor.on('update', () => {
+      updates += 1;
+    });
+
+    expect(
+      editor
+        .chain()
+        .setImageAlignment('left')
+        .insertContentAt(editor.state.doc.content.size, '<p>후속 변경</p>')
+        .run(),
+    ).toBe(true);
+    expect(editor.getHTML()).toContain('<p>후속 변경</p>');
+    expect(transactions).toBe(1);
+    expect(updates).toBe(1);
+    expect(undoDepth(editor.state)).toBe(beforeUndoDepth + 1);
+
+    expect(editor.commands.undo()).toBe(true);
+    expect(editor.getHTML()).toBe(before);
+    expect(transactions).toBe(2);
+    expect(updates).toBe(2);
+    expect(undoDepth(editor.state)).toBe(beforeUndoDepth);
+  });
+
+  it('text selection, 무효 alignment와 non-editable image selection에서 document 변경 없이 거부한다', () => {
+    const editor = createEditor(
+      '<p>본문</p><img src="https://cdn.example.com/reject.png" alt="설명" width="320">',
+    );
+    editors.push(editor);
+
+    editor.commands.setTextSelection(1);
+
+    expect(editor.can().setImageAlignment('center')).toBe(false);
+    expect(editor.commands.setImageAlignment('center')).toBe(false);
+
+    selectImage(editor);
+    const beforeInvalidAlignment = editor.getJSON();
+
+    expect(editor.commands.setImageAlignment('justify' as never)).toBe(false);
+    expect(editor.getJSON()).toEqual(beforeInvalidAlignment);
+
+    editor.setEditable(false, false);
+    const beforeNonEditable = editor.getJSON();
+
+    expect(editor.state.selection).toBeInstanceOf(NodeSelection);
+    expect(editor.commands.setImageAlignment('right')).toBe(false);
+    expect(editor.getJSON()).toEqual(beforeNonEditable);
+  });
 
   it('표의 header와 cell 내용을 round-trip한다', () => {
     const output = roundTrip(`

@@ -56,6 +56,42 @@ function enablePointerCapture(handle: HTMLElement): {
   return { releasePointerCapture, setPointerCapture };
 }
 
+type SavedImagePresentation = {
+  alignment: 'left' | 'center' | 'right';
+  alt: string | null;
+  src: string;
+  width: number | null;
+};
+
+/** 저장 HTML의 image 표현을 독립적으로 읽어 순서 교환 결과를 비교한다. */
+function savedImagePresentation(html: string): SavedImagePresentation {
+  const image = new DOMParser().parseFromString(html, 'text/html').querySelector('img');
+  if (!image) {
+    throw new Error('저장 HTML에서 image를 찾을 수 없습니다.');
+  }
+  const src = image.getAttribute('src');
+  if (src === null) {
+    throw new Error('저장 HTML의 image src를 찾을 수 없습니다.');
+  }
+
+  const marginLeft = image.style.marginLeft;
+  const marginRight = image.style.marginRight;
+  const alignment =
+    marginLeft === 'auto' && marginRight === 'auto'
+      ? 'center'
+      : marginLeft === 'auto' && marginRight === '0px'
+        ? 'right'
+        : 'left';
+  const widthAttribute = image.getAttribute('width');
+
+  return {
+    alignment,
+    alt: image.getAttribute('alt'),
+    src,
+    width: widthAttribute === null ? null : Number(widthAttribute),
+  };
+}
+
 /** contenteditable의 caret을 지정한 텍스트 위치로 옮긴다. */
 function setCaret(textNode: Text, offset: number): void {
   const range = document.createRange();
@@ -311,6 +347,181 @@ describe('HtmlEditor', () => {
     expect(savedHtml).toContain('margin-right: auto');
     expect(savedHtml).not.toContain('height="');
     expect(savedHtml).not.toContain('editor-simple__image');
+  });
+
+  it('image 오른쪽 정렬은 NodeView margin과 저장 HTML에서 기존 width와 attribute를 보존한다', async () => {
+    const onChange = vi.fn();
+    render(
+      <HtmlEditor
+        value={
+          '<img src="https://cdn.example.com/alignment.png" alt="오른쪽 정렬 대상" width="200" style="margin-left: auto; margin-right: auto">'
+        }
+        onChange={onChange}
+      />,
+    );
+    const editor = await screen.findByRole('textbox');
+    const image = (await screen.findByRole('img', {
+      name: '오른쪽 정렬 대상',
+    })) as HTMLImageElement;
+    const wrapper = requireElement(
+      image.closest<HTMLElement>('.editor-simple__image'),
+      'image NodeView wrapper',
+    );
+
+    loadImageForResize(editor, image, 200);
+    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 41 });
+    onChange.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '이미지 오른쪽 정렬' }));
+
+    await waitFor(() => expect(wrapper).toHaveStyle({ width: '200px' }));
+    expect(wrapper).toHaveStyle({ marginLeft: 'auto', marginRight: '0px' });
+    expect(wrapper).toHaveClass('editor-simple__image--selected');
+    expect(screen.getByRole('button', { name: '이미지 크기 조절' })).toBeInTheDocument();
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+
+    expect(savedImagePresentation(onChange.mock.lastCall?.[0] as string)).toEqual({
+      alignment: 'right',
+      alt: '오른쪽 정렬 대상',
+      src: 'https://cdn.example.com/alignment.png',
+      width: 200,
+    });
+  });
+
+  it('resize 뒤 image 가운데 정렬은 저장 후 다시 렌더해도 width와 margin을 유지한다', async () => {
+    const onChange = vi.fn();
+    const source = '<img src="https://cdn.example.com/order.png" alt="순서 교환 대상" width="200">';
+    const { unmount } = render(<HtmlEditor value={source} onChange={onChange} />);
+    const editor = await screen.findByRole('textbox');
+    const image = (await screen.findByRole('img', { name: '순서 교환 대상' })) as HTMLImageElement;
+    loadImageForResize(editor, image, 200);
+    fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 42 });
+    const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
+    enablePointerCapture(handle);
+    onChange.mockClear();
+
+    fireEvent.pointerDown(handle, {
+      button: 0,
+      clientX: 100,
+      isPrimary: true,
+      pointerId: 42,
+    });
+    fireEvent.pointerUp(handle, { clientX: 160, isPrimary: true, pointerId: 42 });
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: '이미지 가운데 정렬' }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+    const savedHtml = onChange.mock.lastCall?.[0] as string;
+
+    expect(savedImagePresentation(savedHtml)).toEqual({
+      alignment: 'center',
+      alt: '순서 교환 대상',
+      src: 'https://cdn.example.com/order.png',
+      width: 260,
+    });
+
+    unmount();
+    render(<HtmlEditor value={savedHtml} onChange={vi.fn()} />);
+    const restoredImage = await screen.findByRole('img', { name: '순서 교환 대상' });
+    const restoredWrapper = requireElement(
+      restoredImage.closest<HTMLElement>('.editor-simple__image'),
+      '저장 후 image NodeView wrapper',
+    );
+
+    expect(restoredWrapper).toHaveStyle({
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      width: '260px',
+    });
+  });
+
+  it('image 가운데 정렬 뒤 resize는 같은 image의 resize 뒤 정렬 저장 의미와 직접 교환된다', async () => {
+    const source = '<img src="https://cdn.example.com/order.png" alt="순서 교환 대상" width="200">';
+    const resizeThenAlignmentOnChange = vi.fn();
+    const { unmount } = render(
+      <HtmlEditor value={source} onChange={resizeThenAlignmentOnChange} />,
+    );
+    const resizeThenAlignmentEditor = await screen.findByRole('textbox');
+    const resizeThenAlignmentImage = (await screen.findByRole('img', {
+      name: '순서 교환 대상',
+    })) as HTMLImageElement;
+    loadImageForResize(resizeThenAlignmentEditor, resizeThenAlignmentImage, 200);
+    fireEvent.pointerDown(resizeThenAlignmentImage, {
+      button: 0,
+      isPrimary: true,
+      pointerId: 43,
+    });
+    const resizeThenAlignmentHandle = screen.getByRole('button', { name: '이미지 크기 조절' });
+    enablePointerCapture(resizeThenAlignmentHandle);
+    resizeThenAlignmentOnChange.mockClear();
+    fireEvent.pointerDown(resizeThenAlignmentHandle, {
+      button: 0,
+      clientX: 100,
+      isPrimary: true,
+      pointerId: 43,
+    });
+    fireEvent.pointerUp(resizeThenAlignmentHandle, {
+      clientX: 160,
+      isPrimary: true,
+      pointerId: 43,
+    });
+    await waitFor(() => expect(resizeThenAlignmentOnChange).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: '이미지 가운데 정렬' }));
+    await waitFor(() => expect(resizeThenAlignmentOnChange).toHaveBeenCalledTimes(2));
+    const resizeThenAlignment = savedImagePresentation(
+      resizeThenAlignmentOnChange.mock.lastCall?.[0] as string,
+    );
+
+    expect(resizeThenAlignment).toEqual({
+      alignment: 'center',
+      alt: '순서 교환 대상',
+      src: 'https://cdn.example.com/order.png',
+      width: 260,
+    });
+
+    unmount();
+
+    const alignmentThenResizeOnChange = vi.fn();
+    render(<HtmlEditor value={source} onChange={alignmentThenResizeOnChange} />);
+    const alignmentThenResizeEditor = await screen.findByRole('textbox');
+    const alignmentThenResizeImage = (await screen.findByRole('img', {
+      name: '순서 교환 대상',
+    })) as HTMLImageElement;
+
+    fireEvent.pointerDown(alignmentThenResizeImage, {
+      button: 0,
+      isPrimary: true,
+      pointerId: 44,
+    });
+    alignmentThenResizeOnChange.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '이미지 가운데 정렬' }));
+    await waitFor(() => expect(alignmentThenResizeOnChange).toHaveBeenCalledTimes(1));
+
+    loadImageForResize(alignmentThenResizeEditor, alignmentThenResizeImage, 200);
+    const alignmentThenResizeHandle = screen.getByRole('button', { name: '이미지 크기 조절' });
+    enablePointerCapture(alignmentThenResizeHandle);
+    fireEvent.pointerDown(alignmentThenResizeHandle, {
+      button: 0,
+      clientX: 100,
+      isPrimary: true,
+      pointerId: 44,
+    });
+    fireEvent.pointerUp(alignmentThenResizeHandle, {
+      clientX: 160,
+      isPrimary: true,
+      pointerId: 44,
+    });
+    await waitFor(() => expect(alignmentThenResizeOnChange).toHaveBeenCalledTimes(2));
+    const alignmentThenResize = savedImagePresentation(
+      alignmentThenResizeOnChange.mock.lastCall?.[0] as string,
+    );
+
+    expect(alignmentThenResize).toEqual({
+      alignment: 'center',
+      alt: '순서 교환 대상',
+      src: 'https://cdn.example.com/order.png',
+      width: 260,
+    });
+    expect(alignmentThenResize).toEqual(resizeThenAlignment);
   });
 
   it('drag를 32px로 clamp하고 undo 한 번으로 시작 width를 복원한다', async () => {

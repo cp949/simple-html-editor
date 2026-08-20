@@ -1,9 +1,25 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 const pngFixture = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
 );
+
+async function expectInlineMargins(
+  wrapper: Locator,
+  marginLeft: string,
+  marginRight: string,
+): Promise<void> {
+  await expect
+    .poll(() =>
+      wrapper.evaluate((element) => {
+        const style = (element as HTMLElement).style;
+
+        return [style.marginLeft, style.marginRight];
+      }),
+    )
+    .toEqual([marginLeft, marginRight]);
+}
 
 test('intro HTML을 편집하고 저장한 뒤 정규화 HTML을 다시 불러온다', async ({ page }) => {
   await page.goto('/');
@@ -133,4 +149,47 @@ test('이미지를 drag resize하고 저장한 너비로 다시 불러온다', a
   await expect
     .poll(async () => Math.round((await image.boundingBox())?.width ?? 0))
     .toBe(savedWidth);
+});
+
+test('이미지를 정렬하고 저장한 상태로 다시 불러온다', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '이미지 fixture 불러오기' }).click();
+
+  const editor = page.getByRole('textbox', { name: 'HTML 편집 내용' });
+  const image = editor.getByRole('img', { name: '크기 조절 demo 이미지' });
+  const wrapper = image.locator('..');
+  const controls = ['이미지 왼쪽 정렬', '이미지 가운데 정렬', '이미지 오른쪽 정렬'] as const;
+
+  await expect(image).toBeVisible();
+  await image.click();
+
+  for (const [label, margins] of [
+    ['이미지 왼쪽 정렬', ['0px', 'auto']],
+    ['이미지 가운데 정렬', ['auto', 'auto']],
+    ['이미지 오른쪽 정렬', ['auto', '0px']],
+  ] as const) {
+    await page.getByRole('button', { name: label, exact: true }).click();
+
+    for (const controlLabel of controls) {
+      await expect(page.getByRole('button', { name: controlLabel, exact: true })).toHaveAttribute(
+        'aria-pressed',
+        String(controlLabel === label),
+      );
+    }
+    await expectInlineMargins(wrapper, margins[0], margins[1]);
+  }
+
+  await page.getByRole('button', { name: '서버에 저장' }).click();
+  const savedHtml = page.getByLabel('서버 저장 HTML');
+  await expect(savedHtml).toContainText('width="160"');
+  await expect(savedHtml).toContainText('margin-left: auto');
+  await expect(savedHtml).toContainText('margin-right: 0');
+
+  await page.getByRole('button', { name: 'intro fixture 불러오기' }).click();
+  await expect(editor).toContainText('음성인식(STT)은');
+  await page.getByRole('button', { name: '저장값 다시 불러오기' }).click();
+
+  await expect(image).toBeVisible();
+  await expect(wrapper).toHaveCSS('width', '160px');
+  await expectInlineMargins(wrapper, 'auto', '0px');
 });

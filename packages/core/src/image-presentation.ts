@@ -1,5 +1,6 @@
 import Image from '@tiptap/extension-image';
 import type { NodeViewRenderer } from '@tiptap/core';
+import { type EditorState, NodeSelection, Plugin, PluginKey } from '@tiptap/pm/state';
 
 import { isAllowedImageSrc } from './html-policy';
 
@@ -12,8 +13,17 @@ type ImagePresentation = {
   alignment: ImageAlignment;
 };
 
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    imagePresentation: {
+      setImageAlignment: (alignment: ImageAlignment) => ReturnType;
+    };
+  }
+}
+
 const IMAGE_WIDTH_PATTERN = /^[1-9][0-9]{0,4}$/;
 const IMAGE_ALIGNMENTS = new Set<ImageAlignment>(['left', 'center', 'right']);
+const IMAGE_ALIGNMENT_NO_OP_PLUGIN_KEY = new PluginKey('imageAlignmentNoOp');
 
 function parseImageWidth(value: string | null): number | null {
   if (value === null || !IMAGE_WIDTH_PATTERN.test(value)) {
@@ -350,6 +360,22 @@ function isImageAlignment(value: unknown): value is ImageAlignment {
   return typeof value === 'string' && IMAGE_ALIGNMENTS.has(value as ImageAlignment);
 }
 
+/**
+ * 정확히 하나의 image node를 선택한 `NodeSelection`이면 현재 alignment를, 아니면 `null`을 돌려준다.
+ * `CellSelection`처럼 selection 범위가 우연히 image 하나와 겹치는 경우는 선택으로 보지 않는다.
+ */
+export function selectedImageAlignment(state: EditorState): ImageAlignment | null {
+  const { selection } = state;
+
+  if (!(selection instanceof NodeSelection) || selection.node.type.name !== SafeImage.name) {
+    return null;
+  }
+
+  const { alignment } = selection.node.attrs;
+
+  return isImageAlignment(alignment) ? alignment : 'left';
+}
+
 function imageStyle(alignment: ImageAlignment): string {
   const margins =
     alignment === 'center'
@@ -411,7 +437,53 @@ export const SafeImage = Image.extend({
             attrs: presentation,
           });
         },
+      setImageAlignment:
+        (alignment) =>
+        ({ editor, state, tr, dispatch }) => {
+          const { selection } = state;
+
+          if (
+            !editor.isEditable ||
+            !(selection instanceof NodeSelection) ||
+            selection.node.type !== this.type ||
+            !isImageAlignment(alignment)
+          ) {
+            return false;
+          }
+
+          if (selection.node.attrs.alignment === alignment) {
+            if (dispatch) {
+              tr.setMeta(IMAGE_ALIGNMENT_NO_OP_PLUGIN_KEY, true);
+            }
+
+            return true;
+          }
+
+          if (dispatch) {
+            dispatch(
+              tr.setNodeMarkup(selection.from, undefined, {
+                ...selection.node.attrs,
+                alignment,
+              }),
+            );
+          }
+
+          return true;
+        },
     };
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: IMAGE_ALIGNMENT_NO_OP_PLUGIN_KEY,
+        filterTransaction: (transaction) =>
+          !transaction.getMeta(IMAGE_ALIGNMENT_NO_OP_PLUGIN_KEY) ||
+          transaction.steps.length > 0 ||
+          transaction.selectionSet ||
+          transaction.storedMarksSet ||
+          transaction.scrolledIntoView,
+      }),
+    ];
   },
   addInputRules() {
     return [];

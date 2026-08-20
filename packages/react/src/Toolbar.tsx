@@ -1,4 +1,4 @@
-import { isAllowedLinkHref } from '@cp949/editor-simple-core';
+import { isAllowedLinkHref, selectedImageAlignment } from '@cp949/editor-simple-core';
 import type { Editor } from '@tiptap/core';
 import { useEffect, useState } from 'react';
 
@@ -8,6 +8,12 @@ import { TableControls } from './TableControls';
 type HeadingLevel = 1 | 2 | 3 | 4;
 
 const headingLevels: readonly HeadingLevel[] = [1, 2, 3, 4];
+
+const imageAlignments = [
+  { alignment: 'left', label: '이미지 왼쪽 정렬' },
+  { alignment: 'center', label: '이미지 가운데 정렬' },
+  { alignment: 'right', label: '이미지 오른쪽 정렬' },
+] as const;
 
 /** HtmlEditor 내부에서만 Tiptap command를 접근 가능한 control로 제공한다. */
 export function Toolbar({
@@ -20,6 +26,9 @@ export function Toolbar({
   onPickImage?: () => void;
 }) {
   const [, setRevision] = useState(0);
+  // 이미지 selection은 문단 정렬의 대상이 아니므로 문단 정렬 판정에서 제외한다.
+  const imageAlignment = selectedImageAlignment(editor.state);
+  const isImageSelected = imageAlignment !== null;
 
   useEffect(() => {
     // command 후 활성 상태와 실행 가능 여부를 다시 계산한다.
@@ -149,18 +158,34 @@ export function Toolbar({
             key={alignment}
             label={label}
             active={
-              alignment === 'left'
+              !isImageSelected &&
+              (alignment === 'left'
                 ? !editor.isActive({ textAlign: 'center' }) &&
                   !editor.isActive({ textAlign: 'right' })
-                : editor.isActive({ textAlign: alignment })
+                : editor.isActive({ textAlign: alignment }))
             }
-            disabled={readOnly || !editor.can().chain().focus().setTextAlign(alignment).run()}
+            disabled={
+              readOnly ||
+              isImageSelected ||
+              !editor.can().chain().focus().setTextAlign(alignment).run()
+            }
             onClick={() => editor.chain().focus().setTextAlign(alignment).run()}
           >
             {label}
           </ToolbarButton>
         );
       })}
+      {imageAlignments.map(({ alignment, label }) => (
+        <ToolbarButton
+          key={alignment}
+          label={label}
+          active={imageAlignment === alignment}
+          disabled={readOnly || !editor.can().setImageAlignment(alignment)}
+          onClick={() => editor.commands.setImageAlignment(alignment)}
+        >
+          {label}
+        </ToolbarButton>
+      ))}
       <ToolbarButton
         label="링크 설정"
         active={editor.isActive('link')}

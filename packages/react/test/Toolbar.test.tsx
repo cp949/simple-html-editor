@@ -73,18 +73,43 @@ function selectAllText(editor: Editor, editorElement: HTMLElement): void {
   selectText(editor, firstTextNode, 0, lastTextNode);
 }
 
+/** 편집기 문서의 첫 image node를 정확히 NodeSelection으로 선택한다. */
+function selectImage(editor: Editor): number {
+  let imagePosition: number | undefined;
+
+  editor.state.doc.descendants((node, position) => {
+    if (node.type.name === 'image' && imagePosition === undefined) {
+      imagePosition = position;
+    }
+  });
+
+  if (imagePosition === undefined) {
+    throw new Error('선택할 image node를 찾을 수 없습니다.');
+  }
+  const selectedImagePosition = imagePosition;
+
+  act(() => {
+    editor.commands.setNodeSelection(selectedImagePosition);
+  });
+
+  return selectedImagePosition;
+}
+
 /** 내부 Toolbar가 실제 Tiptap 문서를 조작하도록 렌더링한다. */
 function ToolbarHarness({
   value,
   onEditor,
+  readOnly = false,
 }: {
   value: string;
   onEditor: (editor: Editor) => void;
+  readOnly?: boolean;
 }) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: createHtmlEditorExtensions(),
     content: value,
+    editable: !readOnly,
   });
 
   useEffect(() => {
@@ -95,18 +120,22 @@ function ToolbarHarness({
 
   return editor ? (
     <>
-      <Toolbar editor={editor} readOnly={false} />
+      <Toolbar editor={editor} readOnly={readOnly} />
       <EditorContent editor={editor} />
     </>
   ) : null;
 }
 
 /** Toolbar와 실제 editor를 함께 준비한다. */
-async function renderToolbar(value: string): Promise<{ editor: Editor; element: HTMLElement }> {
+async function renderToolbar(
+  value: string,
+  readOnly = false,
+): Promise<{ editor: Editor; element: HTMLElement }> {
   let resolvedEditor: Editor | undefined;
   render(
     <ToolbarHarness
       value={value}
+      readOnly={readOnly}
       onEditor={(editor) => {
         resolvedEditor = editor;
       }}
@@ -149,6 +178,9 @@ describe('HtmlEditor toolbar', () => {
       '왼쪽 정렬',
       '가운데 정렬',
       '오른쪽 정렬',
+      '이미지 왼쪽 정렬',
+      '이미지 가운데 정렬',
+      '이미지 오른쪽 정렬',
       '링크 설정',
       '링크 제거',
       '글자색 제거',
@@ -231,6 +263,9 @@ describe('HtmlEditor toolbar', () => {
       '왼쪽 정렬',
       '가운데 정렬',
       '오른쪽 정렬',
+      '이미지 왼쪽 정렬',
+      '이미지 가운데 정렬',
+      '이미지 오른쪽 정렬',
       '링크 설정',
       '링크 제거',
       '글자색 제거',
@@ -333,6 +368,164 @@ describe('HtmlEditor toolbar', () => {
       await waitFor(() => expect(element.querySelector('p')).toHaveStyle({ textAlign: alignment }));
       expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true');
     }
+  });
+
+  it('제목과 문단에 걸친 selection에서도 문단 정렬을 실행한다', async () => {
+    const { editor, element } = await renderToolbar('<h1>제목</h1><p>문단</p>');
+    selectText(editor, getTextNode(element, 'h1'), 0, getTextNode(element, 'p'));
+
+    const control = screen.getByRole('button', { name: '가운데 정렬' });
+
+    expect(control).toBeEnabled();
+    fireEvent.click(control);
+
+    await waitFor(() => expect(element.querySelector('h1')).toHaveStyle({ textAlign: 'center' }));
+    expect(element.querySelector('p')).toHaveStyle({ textAlign: 'center' });
+  });
+
+  it('이미지를 가로지르는 text selection에서도 문단 정렬을 실행한다', async () => {
+    const { editor, element } = await renderToolbar(
+      '<p>앞 문단</p><img src="https://cdn.example.com/toolbar.png" alt="설명" width="320"><p>뒤 문단</p>',
+    );
+    const paragraphs = element.querySelectorAll('p');
+    selectText(editor, paragraphs[0].firstChild as Text, 0, paragraphs[1].firstChild as Text);
+
+    const control = screen.getByRole('button', { name: '오른쪽 정렬' });
+
+    expect(control).toBeEnabled();
+    fireEvent.click(control);
+
+    await waitFor(() =>
+      expect(element.querySelectorAll('p')[0]).toHaveStyle({ textAlign: 'right' }),
+    );
+    expect(element.querySelectorAll('p')[1]).toHaveStyle({ textAlign: 'right' });
+  });
+
+  it('image 밖 text selection에서는 이미지 정렬이 disabled이고 pressed가 아니다', async () => {
+    const { editor, element } = await renderToolbar(
+      '<p>문단 정렬</p><img src="https://cdn.example.com/toolbar.png" alt="설명" width="320">',
+    );
+    selectParagraphText(editor, element);
+
+    for (const label of ['이미지 왼쪽 정렬', '이미지 가운데 정렬', '이미지 오른쪽 정렬']) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).toBeDisabled();
+      expect(control).toHaveAttribute('aria-pressed', 'false');
+    }
+  });
+
+  it('이미지만 있는 셀을 head로 하는 CellSelection은 이미지 정렬을 pressed로 표시하지 않고 문단 정렬을 막지 않는다', async () => {
+    const { editor, element } = await renderToolbar(
+      '<table><tbody><tr><td><p>문단</p></td><td><img src="https://cdn.example.com/toolbar.png" alt="설명" width="320"></td></tr></tbody></table>',
+    );
+    const cellPositions: number[] = [];
+
+    editor.state.doc.descendants((node, position) => {
+      if (node.type.name === 'tableCell') {
+        cellPositions.push(position);
+      }
+
+      return true;
+    });
+
+    act(() => {
+      editor.commands.setCellSelection({
+        anchorCell: cellPositions[0],
+        headCell: cellPositions[1],
+      });
+    });
+
+    for (const label of ['이미지 왼쪽 정렬', '이미지 가운데 정렬', '이미지 오른쪽 정렬']) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).toBeDisabled();
+      expect(control).toHaveAttribute('aria-pressed', 'false');
+    }
+
+    const textAlignment = screen.getByRole('button', { name: '가운데 정렬' });
+
+    expect(textAlignment).toBeEnabled();
+    fireEvent.click(textAlignment);
+
+    await waitFor(() => expect(element.querySelector('p')).toHaveStyle({ textAlign: 'center' }));
+    expect(editor.getAttributes('image')).toMatchObject({ alignment: 'left', width: 320 });
+  });
+
+  it('image NodeSelection에서는 image 정렬만 활성이고 문단 정렬은 실행되지 않는다', async () => {
+    const { editor } = await renderToolbar(
+      '<p>문단 정렬</p><img src="https://cdn.example.com/toolbar.png" alt="설명" width="320" style="margin-left: auto; margin-right: auto">',
+    );
+    selectImage(editor);
+
+    for (const [label, pressed] of [
+      ['이미지 왼쪽 정렬', false],
+      ['이미지 가운데 정렬', true],
+      ['이미지 오른쪽 정렬', false],
+    ] as const) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).toBeEnabled();
+      expect(control).toHaveAttribute('aria-pressed', String(pressed));
+    }
+
+    for (const label of ['왼쪽 정렬', '가운데 정렬', '오른쪽 정렬']) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).toBeDisabled();
+      expect(control).toHaveAttribute('aria-pressed', 'false');
+    }
+  });
+
+  it('image 정렬 toolbar 조작은 image selection과 presentation attribute를 보존한다', async () => {
+    const { editor } = await renderToolbar(
+      '<p>문단 정렬</p><img src="https://cdn.example.com/toolbar.png" alt="설명" width="320">',
+    );
+    const imagePosition = selectImage(editor);
+    const selection = { from: editor.state.selection.from, to: editor.state.selection.to };
+    const control = screen.getByRole('button', { name: '이미지 가운데 정렬' });
+
+    fireEvent.mouseDown(control);
+
+    expect(editor.state.selection).toMatchObject(selection);
+    expect(editor.state.selection.from).toBe(imagePosition);
+    expect(editor.getAttributes('image')).toEqual({
+      src: 'https://cdn.example.com/toolbar.png',
+      alt: '설명',
+      width: 320,
+      alignment: 'left',
+    });
+
+    fireEvent.click(control);
+
+    await waitFor(() =>
+      expect(editor.getAttributes('image')).toEqual({
+        src: 'https://cdn.example.com/toolbar.png',
+        alt: '설명',
+        width: 320,
+        alignment: 'center',
+      }),
+    );
+    expect(editor.state.selection).toMatchObject(selection);
+    expect(editor.state.selection.from).toBe(imagePosition);
+  });
+
+  it('readOnly image selection에서는 image 정렬 control이 문서를 바꾸지 않는다', async () => {
+    const { editor } = await renderToolbar(
+      '<img src="https://cdn.example.com/toolbar.png" alt="설명" width="320">',
+      true,
+    );
+    selectImage(editor);
+    const before = editor.getHTML();
+
+    for (const label of ['이미지 왼쪽 정렬', '이미지 가운데 정렬', '이미지 오른쪽 정렬']) {
+      const control = screen.getByRole('button', { name: label });
+
+      expect(control).toBeDisabled();
+      fireEvent.click(control);
+    }
+
+    expect(editor.getHTML()).toBe(before);
   });
 
   it('글자색 입력과 제거가 선택한 실제 텍스트의 style을 바꾼다', async () => {
