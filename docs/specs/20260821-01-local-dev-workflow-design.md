@@ -185,7 +185,7 @@ push 완료 여부는 이슈 종료 조건이 아니다.
 - 기능 코드 또는 제품 계약 변경
 - worktree 생성
 - 기능별 branch와 Pull Request 도입
-- agent의 Git push, force push, publish 또는 배포
+- 별도 사용자 지시가 없는 agent의 Git push와 모든 force push, publish 또는 배포
 - 공개된 commit의 history rewrite
 - 발견한 후속 이슈의 자동 구현
 - 현재 설계와 무관한 기존 이슈·라벨 일괄 정리
@@ -193,7 +193,8 @@ push 완료 여부는 이슈 종료 조건이 아니다.
 ## 11. 성공 조건
 
 - 모든 구현 작업이 단일 로컬 `dev`에서 시작된다.
-- 최초 `origin/dev` 생성과 이후 push는 사용자가 수행한다.
+- 작업 시작 시 로컬 `dev`와 `origin/dev`가 같은 commit을 가리킨다.
+- 최초 `origin/dev` 생성과 이후 push는 원칙적으로 사용자가 수행하며, agent는 사용자가 해당 push를 별도로 명시한 경우에만 수행한다.
 - 문서에 정의된 표준 triage 라벨 다섯 개가 GitHub에 존재한다.
 - 현재 범위 밖의 구체적인 후속 작업이 `needs-triage` 이슈로 누락 없이 등록된다.
 - 후속 이슈 등록이 현재 구현 범위를 확장하지 않는다.
