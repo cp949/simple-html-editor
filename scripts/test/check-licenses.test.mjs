@@ -42,58 +42,63 @@ async function createFixture(packages) {
   }
 
   const nested = new Set(packages.flatMap((entry) => entry.dependencies ?? []));
-  const workspaceRoot = {
-    name: '@cp949/simple-html-editor-react',
-    version: '0.1.0',
-    path: path.join(root, 'packages/react'),
-    private: true,
-    dependencies: {},
-    devDependencies: {},
-  };
+  const workspaceRoots = Object.fromEntries(
+    ['core', 'react'].map((kind) => [
+      kind,
+      {
+        name: `@cp949/simple-html-editor-${kind}`,
+        version: '0.1.0',
+        path: path.join(root, `packages/${kind}`),
+        dependencies: {},
+        devDependencies: {},
+      },
+    ]),
+  );
   for (const entry of packages.filter((candidate) => !nested.has(candidate.name))) {
-    workspaceRoot[entry.section ?? 'dependencies'][entry.name] = packageNodes.get(entry.name);
+    workspaceRoots[entry.owner ?? 'react'][entry.section ?? 'dependencies'][entry.name] =
+      packageNodes.get(entry.name);
   }
-  const metadata = [workspaceRoot];
+  const metadata = [workspaceRoots.react, workspaceRoots.core];
   const metadataPath = path.join(root, 'pnpm-list.json');
   const reportPath = path.join(root, 'dependency-licenses.md');
-  const bundleMetadataPath = path.join(root, 'bundle-modules.json');
-  const bundleFilePath = path.join(root, 'bundle.js');
+  const bundleMetadataPaths = [];
   const lockfilePath = path.join(root, 'pnpm-lock.yaml');
-  await mkdir(path.join(root, 'packages/react'), { recursive: true });
-  await writeFile(
-    path.join(root, 'packages/react/package.json'),
-    `${JSON.stringify(
-      {
-        name: '@cp949/simple-html-editor-react',
-        version: '0.1.0',
-        private: true,
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  for (const kind of ['core', 'react']) {
+    await mkdir(path.join(root, `packages/${kind}`), { recursive: true });
+    await writeFile(
+      path.join(root, `packages/${kind}/package.json`),
+      `${JSON.stringify({ name: `@cp949/simple-html-editor-${kind}`, version: '0.1.0' }, null, 2)}\n`,
+    );
+  }
   await writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
-  await writeFile(bundleFilePath, 'export const bundle = true\n');
-  await writeFile(
-    bundleMetadataPath,
-    `${JSON.stringify(
-      {
-        version: 1,
-        bundle: {
-          file: bundleFilePath,
-          sha256: sha256('export const bundle = true\n'),
+  for (const kind of ['core', 'react']) {
+    const bundleSource = `export const ${kind}Bundle = true\n`;
+    const bundleFilePath = path.join(root, `packages/${kind}/dist/index.js`);
+    const bundleMetadataPath = path.join(root, `${kind}-bundle-modules.json`);
+    await mkdir(path.dirname(bundleFilePath), { recursive: true });
+    await writeFile(bundleFilePath, bundleSource);
+    await writeFile(
+      bundleMetadataPath,
+      `${JSON.stringify(
+        {
+          version: 1,
+          bundle: { file: bundleFilePath, sha256: sha256(bundleSource) },
+          modules: packages
+            .filter((entry) => entry.bundled && (entry.owner ?? 'react') === kind)
+            .map((entry) => path.join(packageNodes.get(entry.name).path, 'index.js')),
+          externalImports: packages
+            .filter(
+              (entry) =>
+                !entry.bundled && !nested.has(entry.name) && (entry.owner ?? 'react') === kind,
+            )
+            .map((entry) => entry.name),
         },
-        modules: packages
-          .filter((entry) => entry.bundled)
-          .map((entry) => path.join(packageNodes.get(entry.name).path, 'index.js')),
-        externalImports: packages
-          .filter((entry) => !entry.bundled && !nested.has(entry.name))
-          .map((entry) => entry.name),
-      },
-      null,
-      2,
-    )}\n`,
-  );
+        null,
+        2,
+      )}\n`,
+    );
+    bundleMetadataPaths.push(bundleMetadataPath);
+  }
   await writeFile(
     lockfilePath,
     `lockfileVersion: '9.0'\n\npackages:\n${packages
@@ -101,10 +106,10 @@ async function createFixture(packages) {
       .join('\n')}\n`,
   );
 
-  return { root, metadataPath, reportPath, bundleMetadataPath, lockfilePath };
+  return { root, metadataPath, reportPath, bundleMetadataPaths, lockfilePath };
 }
 
-function runChecker({ root, metadataPath, reportPath, bundleMetadataPath, lockfilePath }) {
+function runChecker({ root, metadataPath, reportPath, bundleMetadataPaths, lockfilePath }) {
   return spawnSync(
     process.execPath,
     [
@@ -113,8 +118,7 @@ function runChecker({ root, metadataPath, reportPath, bundleMetadataPath, lockfi
       root,
       '--metadata',
       metadataPath,
-      '--bundle-metadata',
-      bundleMetadataPath,
+      ...bundleMetadataPaths.flatMap((metadataPath) => ['--bundle-metadata', metadataPath]),
       '--lockfile',
       lockfilePath,
       '--report',
@@ -228,6 +232,55 @@ test('정렬된 보고서에 번들 Tiptap과 ProseMirror package를 기록한�
   );
 });
 
+test('core와 React bundle evidence의 합집합을 보고서에 한 번씩 기록한다', async () => {
+  await withFixture(
+    [
+      { name: 'core-bundled', license: 'MIT', bundled: true, owner: 'core' },
+      { name: 'shared-external', license: 'MIT', owner: 'core' },
+      { name: 'react-bundled', license: 'MIT', bundled: true, owner: 'react' },
+    ],
+    async (fixture, { status, stderr }) => {
+      assert.equal(status, 0, stderr);
+      const report = await readFile(fixture.reportPath, 'utf8');
+      for (const packageName of ['core-bundled', 'react-bundled', 'shared-external']) {
+        assert.equal(report.match(new RegExp(`\\| ${packageName} \\|`, 'g'))?.length, 1);
+      }
+      const reversed = runChecker({
+        ...fixture,
+        bundleMetadataPaths: [...fixture.bundleMetadataPaths].reverse(),
+      });
+      assert.equal(reversed.status, 0, reversed.stderr);
+    },
+  );
+});
+
+test('두 bundle metadata 중 하나가 stale이면 거부한다', async () => {
+  const fixture = await createFixture([{ name: 'runtime-package', license: 'MIT' }]);
+  try {
+    await writeFile(path.join(fixture.root, 'packages/core/dist/index.js'), 'stale bundle\n');
+    const result = runChecker(fixture);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Bundle metadata is stale/);
+    assert.match(result.stderr, /packages\/core\/dist\/index\.js/);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('두 bundle metadata 중 하나가 누락되면 거부한다', async () => {
+  const fixture = await createFixture([{ name: 'runtime-package', license: 'MIT' }]);
+  try {
+    const result = runChecker({
+      ...fixture,
+      bundleMetadataPaths: [fixture.bundleMetadataPaths[1]],
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Exactly two bundle metadata files are required/);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
 // Production break: production manifest closure 밖의 build dependency가 bundle에 포함돼도 license 검사를 피한다.
 test('bundle evidence에 있는 build-only package의 금지 라이선스를 거부한다', async () => {
   await withFixture(
@@ -248,8 +301,8 @@ test('bundle evidence에 있는 build-only package의 금지 라이선스를 거
 });
 
 // Production break: 실제 library build가 bundle module evidence를 만들지 않거나 public dist에 추가 artifact를 남긴다.
-test('실제 build가 4-file dist 밖에 bundle evidence를 생성한다', async () => {
-  const build = spawnSync('pnpm', ['--filter', '@cp949/simple-html-editor-react', 'build'], {
+test('실제 build가 두 공개 package의 dist 밖에 bundle evidence를 생성한다', async () => {
+  const build = spawnSync('pnpm', ['build'], {
     cwd: path.resolve('.'),
     encoding: 'utf8',
   });
@@ -257,22 +310,37 @@ test('실제 build가 4-file dist 밖에 bundle evidence를 생성한다', async
 
   const distFiles = (await readdir(path.resolve('packages/react/dist'))).sort();
   assert.deepEqual(distFiles, ['index.d.ts', 'index.js', 'package.json', 'styles.css']);
+  const coreDistFiles = (await readdir(path.resolve('packages/core/dist'))).sort();
+  assert.deepEqual(coreDistFiles, [
+    'empty-document.d.ts',
+    'extensions.d.ts',
+    'html-policy.d.ts',
+    'image-presentation.d.ts',
+    'index.d.ts',
+    'index.js',
+    'package.json',
+  ]);
 
-  let metadata;
-  try {
-    metadata = JSON.parse(
-      await readFile(path.resolve('packages/react/.bundle/bundle-modules.json'), 'utf8'),
-    );
-  } catch (error) {
-    assert.fail(`bundle metadata를 읽을 수 없습니다: ${error.message}`);
+  for (const kind of ['core', 'react']) {
+    let metadata;
+    try {
+      metadata = JSON.parse(
+        await readFile(path.resolve(`packages/${kind}/.bundle/bundle-modules.json`), 'utf8'),
+      );
+    } catch (error) {
+      assert.fail(`${kind} bundle metadata를 읽을 수 없습니다: ${error.message}`);
+    }
+    assert.equal(metadata.version, 1);
+    const builtJavaScript = await readFile(path.resolve(`packages/${kind}/dist/index.js`));
+    assert.ok(metadata.bundle, `${kind} bundle metadata가 JavaScript hash를 제공해야 합니다.`);
+    assert.equal(metadata.bundle.file, `packages/${kind}/dist/index.js`);
+    assert.equal(metadata.bundle.sha256, sha256(builtJavaScript));
+    if (kind === 'core') {
+      assert.ok(metadata.externalImports.some((specifier) => specifier.startsWith('@tiptap/')));
+    } else {
+      assert.ok(metadata.externalImports.includes('@cp949/simple-html-editor-core'));
+    }
   }
-  assert.equal(metadata.version, 1);
-  const builtJavaScript = await readFile(path.resolve('packages/react/dist/index.js'));
-  assert.ok(metadata.bundle, 'bundle metadata가 built JavaScript hash를 제공해야 합니다.');
-  assert.equal(metadata.bundle.file, 'packages/react/dist/index.js');
-  assert.equal(metadata.bundle.sha256, sha256(builtJavaScript));
-  assert.ok(metadata.modules.some((moduleId) => moduleId.includes('@tiptap/core')));
-  assert.ok(metadata.modules.some((moduleId) => moduleId.includes('prosemirror-state')));
 });
 
 async function createPnpmWorkspaceFixture({ includeForbiddenUnbundled = false } = {}) {
@@ -367,11 +435,32 @@ async function createPnpmWorkspaceFixture({ includeForbiddenUnbundled = false } 
   const workspacePackage = await realpath(
     path.join(root, 'packages/core/node_modules/workspace-package'),
   );
+  const coreBundleDirectory = path.join(root, 'packages/core/.bundle');
+  const coreDistDirectory = path.join(root, 'packages/core/dist');
   const bundleDirectory = path.join(root, 'packages/react/.bundle');
   const distDirectory = path.join(root, 'packages/react/dist');
+  await mkdir(coreBundleDirectory, { recursive: true });
+  await mkdir(coreDistDirectory, { recursive: true });
   await mkdir(bundleDirectory, { recursive: true });
   await mkdir(distDirectory, { recursive: true });
+  await writeFile(path.join(coreDistDirectory, 'index.js'), 'export const coreBundle = true\n');
   await writeFile(path.join(distDirectory, 'index.js'), 'export const bundle = true\n');
+  await writeFile(
+    path.join(coreBundleDirectory, 'bundle-modules.json'),
+    `${JSON.stringify(
+      {
+        version: 1,
+        bundle: {
+          file: 'packages/core/dist/index.js',
+          sha256: sha256('export const coreBundle = true\n'),
+        },
+        modules: [path.join(workspacePackage, 'src/index.js')],
+        externalImports: ['workspace-package'],
+      },
+      null,
+      2,
+    )}\n`,
+  );
   await writeFile(
     path.join(bundleDirectory, 'bundle-modules.json'),
     `${JSON.stringify(
@@ -381,10 +470,7 @@ async function createPnpmWorkspaceFixture({ includeForbiddenUnbundled = false } 
           file: 'packages/react/dist/index.js',
           sha256: sha256('export const bundle = true\n'),
         },
-        modules: [
-          path.join(buildOnly, 'src/index.js'),
-          path.join(workspacePackage, 'src/index.js'),
-        ],
+        modules: [path.join(buildOnly, 'src/index.js')],
         externalImports: ['direct-package', 'peer-package'],
       },
       null,

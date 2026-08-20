@@ -8,6 +8,9 @@ import test from 'node:test';
 const checker = path.resolve('scripts/check-package-boundaries.mjs');
 
 async function createWorkspace({
+  coreDeclaration = '',
+  coreDistAccess = 'public',
+  coreVersion = '0.1.0',
   dependencies = {},
   declaration = '',
   declarations = {},
@@ -15,16 +18,19 @@ async function createWorkspace({
   rootDependencies = {},
   rootDevDependencies = {},
   rootOptionalDependencies = {},
+  reactDistCoreVersion = '0.1.0',
 } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), 'editor-boundaries-'));
   const manifests = {
     'packages/core': {
       name: '@cp949/simple-html-editor-core',
-      private: true,
-      dependencies: dependencies.core ?? {},
+      version: coreVersion,
+      dependencies: { '@tiptap/core': '^3.30.2', ...(dependencies.core ?? {}) },
+      publishConfig: { access: 'public' },
     },
     'packages/react': {
       name: '@cp949/simple-html-editor-react',
+      version: '0.1.0',
       dependencies: {
         '@cp949/simple-html-editor-core': 'workspace:*',
         ...(dependencies.react ?? {}),
@@ -33,6 +39,7 @@ async function createWorkspace({
         react: '>=18.3.0 <20',
         'react-dom': '>=18.3.0 <20',
       },
+      publishConfig: { access: 'public' },
     },
     'apps/demo': {
       name: '@cp949/simple-html-editor-demo',
@@ -68,6 +75,7 @@ async function createWorkspace({
       {
         name: 'workspace-root',
         private: true,
+        version: '0.1.0',
         dependencies: rootDependencies,
         devDependencies: rootDevDependencies,
         optionalDependencies: rootOptionalDependencies,
@@ -85,22 +93,39 @@ async function createWorkspace({
     );
   }
 
-  const dist = path.join(root, 'packages/react/dist');
-  await mkdir(dist, { recursive: true });
-  await writeFile(path.join(dist, 'index.js'), 'export const editor = {}\n');
-  await writeFile(path.join(dist, 'index.d.ts'), declaration);
-  await writeFile(
-    path.join(dist, 'package.json'),
-    `${JSON.stringify(
+  for (const [kind, source, manifest] of [
+    [
+      'core',
+      coreDeclaration,
       {
-        name: '@cp949/simple-html-editor-react',
+        name: '@cp949/simple-html-editor-core',
+        version: '0.1.0',
         types: './index.d.ts',
         exports: { '.': { types: './index.d.ts', import: './index.js' } },
+        dependencies: { '@tiptap/core': '^3.30.2' },
+        publishConfig: { access: coreDistAccess },
       },
-      null,
-      2,
-    )}\n`,
-  );
+    ],
+    [
+      'react',
+      declaration,
+      {
+        name: '@cp949/simple-html-editor-react',
+        version: '0.1.0',
+        types: './index.d.ts',
+        exports: { '.': { types: './index.d.ts', import: './index.js' } },
+        dependencies: { '@cp949/simple-html-editor-core': reactDistCoreVersion },
+        publishConfig: { access: 'public' },
+      },
+    ],
+  ]) {
+    const dist = path.join(root, `packages/${kind}/dist`);
+    await mkdir(dist, { recursive: true });
+    await writeFile(path.join(dist, 'index.js'), 'export const editor = {}\n');
+    await writeFile(path.join(dist, 'index.d.ts'), source);
+    await writeFile(path.join(dist, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  const dist = path.join(root, 'packages/react/dist');
   for (const [relativePath, source] of Object.entries(declarations)) {
     const declarationPath = path.join(dist, relativePath);
     await mkdir(path.dirname(declarationPath), { recursive: true });
@@ -171,7 +196,7 @@ test('consumer React 19 -> core 의존성을 거부한다', async () => {
 });
 
 // Production break: 공개 선언이 번들 내부 Tiptap 타입을 다시 노출한다.
-test('공개 index.d.ts의 @tiptap/core import를 거부한다', async () => {
+test('React 공개 index.d.ts의 @tiptap/core import를 거부한다', async () => {
   await withWorkspace(
     { declaration: "export type { Editor } from '@tiptap/core'\n" },
     ({ status, stderr }) => {
@@ -179,6 +204,45 @@ test('공개 index.d.ts의 @tiptap/core import를 거부한다', async () => {
       assert.match(stderr, /@tiptap\/core/);
     },
   );
+});
+
+test('core 공개 선언의 @tiptap/core 타입은 허용한다', async () => {
+  await withWorkspace(
+    { coreDeclaration: "export type { Extensions } from '@tiptap/core'\n" },
+    ({ status, stderr }) => assert.equal(status, 0, stderr),
+  );
+});
+
+test('core 공개 선언의 미선언 package 타입을 거부한다', async () => {
+  await withWorkspace(
+    { coreDeclaration: "export type { EditorState } from 'prosemirror-state'\n" },
+    ({ status, stderr }) => {
+      assert.notEqual(status, 0);
+      assert.match(stderr, /Core public declaration index\.d\.ts imports undeclared package/);
+      assert.match(stderr, /prosemirror-state/);
+    },
+  );
+});
+
+test('core source version과 root version 불일치를 거부한다', async () => {
+  await withWorkspace({ coreVersion: '0.1.1' }, ({ status, stderr }) => {
+    assert.notEqual(status, 0);
+    assert.match(stderr, /Core source version must equal root version 0\.1\.0/);
+  });
+});
+
+test('core dist의 public access 누락을 거부한다', async () => {
+  await withWorkspace({ coreDistAccess: 'restricted' }, ({ status, stderr }) => {
+    assert.notEqual(status, 0);
+    assert.match(stderr, /Core dist publishConfig\.access must be public/);
+  });
+});
+
+test('React dist의 core dependency version 불일치를 거부한다', async () => {
+  await withWorkspace({ reactDistCoreVersion: '0.1.1' }, ({ status, stderr }) => {
+    assert.notEqual(status, 0);
+    assert.match(stderr, /React dist core dependency must equal 0\.1\.0/);
+  });
 });
 
 // Production break: 공개 선언이 번들 내부 ProseMirror 타입을 다시 노출한다.
@@ -310,7 +374,7 @@ test('공개 package canonical 이름 변경을 거부한다', async () => {
     ({ status, stderr }) => {
       assert.notEqual(status, 0);
       assert.match(stderr, /packages\/react package name/);
-      assert.match(stderr, /@cp949\/editor-simple/);
+      assert.match(stderr, /@cp949\/simple-html-editor-react/);
     },
   );
 });

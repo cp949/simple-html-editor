@@ -14,8 +14,8 @@ const allowedLicenses = new Set([
   'MIT OR Apache-2.0',
 ]);
 const ownedWorkspacePackages = new Set([
-  '@cp949/simple-html-editor-react',
   '@cp949/simple-html-editor-core',
+  '@cp949/simple-html-editor-react',
 ]);
 
 function compareStrings(left, right) {
@@ -27,7 +27,7 @@ function parseArguments(argv) {
     root: process.cwd(),
     metadata: undefined,
     report: undefined,
-    bundleMetadata: undefined,
+    bundleMetadata: [],
     lockfile: undefined,
   };
   const flags = new Set(['--root', '--metadata', '--report', '--bundle-metadata', '--lockfile']);
@@ -40,17 +40,26 @@ function parseArguments(argv) {
       );
     }
     const key = flag.slice(2).replace(/-([a-z])/g, (_, character) => character.toUpperCase());
-    options[key] = value;
+    if (key === 'bundleMetadata') options.bundleMetadata.push(value);
+    else options[key] = value;
   }
   options.root = path.resolve(options.root);
   options.report = path.resolve(
     options.root,
     options.report ?? 'docs/product/dependency-licenses.md',
   );
-  options.bundleMetadata = path.resolve(
-    options.root,
-    options.bundleMetadata ?? 'packages/react/.bundle/bundle-modules.json',
+  if (options.bundleMetadata.length === 0) {
+    options.bundleMetadata = [
+      'packages/core/.bundle/bundle-modules.json',
+      'packages/react/.bundle/bundle-modules.json',
+    ];
+  }
+  options.bundleMetadata = options.bundleMetadata.map((metadataPath) =>
+    path.resolve(options.root, metadataPath),
   );
+  if (options.bundleMetadata.length !== 2) {
+    throw new Error('Exactly two bundle metadata files are required');
+  }
   options.lockfile = path.resolve(options.root, options.lockfile ?? 'pnpm-lock.yaml');
   if (options.metadata) options.metadata = path.resolve(options.root, options.metadata);
   return options;
@@ -253,6 +262,17 @@ function packageNameFromSpecifier(specifier) {
   return specifier.split('/')[0];
 }
 
+function publicPackageNameForBundle(bundleMetadata) {
+  const normalizedFile = bundleMetadata.bundle.file.replaceAll('\\', '/');
+  const match = normalizedFile.match(/(?:^|\/)packages\/(core|react)\//);
+  if (!match) {
+    throw new Error(
+      `Bundle output must belong to packages/core or packages/react: ${normalizedFile}`,
+    );
+  }
+  return `@cp949/simple-html-editor-${match[1]}`;
+}
+
 function recordContainingModule(records, modulePath) {
   const absoluteModulePath = path.resolve(modulePath);
   return [...records.values()]
@@ -275,7 +295,7 @@ function isAuditedRecord(record) {
   return record.directoryExists || record.requiredByGraph;
 }
 
-function selectAuditedRecords(root, records, bundleMetadata) {
+function selectAuditedRecords(root, records, bundleMetadataEntries) {
   const selectedPaths = new Set();
   const bundledPaths = new Set();
   const failures = [];
@@ -288,44 +308,47 @@ function selectAuditedRecords(root, records, bundleMetadata) {
     if (isAuditedRecord(record)) selectedPaths.add(record.path);
   }
 
-  for (const moduleId of bundleMetadata.modules) {
-    const modulePath = path.isAbsolute(moduleId) ? moduleId : path.resolve(root, moduleId);
-    const record = recordContainingModule(records, modulePath);
-    if (!record) {
-      if (modulePath.split(path.sep).includes('node_modules')) {
-        failures.push(`Bundled module is absent from full pnpm graph: ${moduleId}`);
+  for (const bundleMetadata of bundleMetadataEntries) {
+    for (const moduleId of bundleMetadata.modules) {
+      const modulePath = path.isAbsolute(moduleId) ? moduleId : path.resolve(root, moduleId);
+      const record = recordContainingModule(records, modulePath);
+      if (!record) {
+        if (modulePath.split(path.sep).includes('node_modules')) {
+          failures.push(`Bundled module is absent from full pnpm graph: ${moduleId}`);
+        }
+        continue;
       }
-      continue;
-    }
-    if (!ownedWorkspacePackages.has(record.manifest?.name)) {
-      selectedPaths.add(record.path);
-      bundledPaths.add(record.path);
+      if (!ownedWorkspacePackages.has(record.manifest?.name)) {
+        selectedPaths.add(record.path);
+        bundledPaths.add(record.path);
+      }
     }
   }
 
-  const publicRecord = [...records.values()].find(
-    (record) => record.manifest?.name === '@cp949/simple-html-editor-react',
-  );
-  const directPublicDependencies = publicRecord
-    ? [...publicRecord.dependencyPaths]
-        .map((dependencyPath) => records.get(dependencyPath))
-        .filter(Boolean)
-    : [];
-
   const externalRoots = [];
-  for (const specifier of bundleMetadata.externalImports) {
-    if (specifier.startsWith('.') || specifier.startsWith('node:')) continue;
-    const packageName = packageNameFromSpecifier(specifier);
-    const directMatches = directPublicDependencies.filter(
-      (record) => record.manifest?.name === packageName,
+  for (const bundleMetadata of bundleMetadataEntries) {
+    const publicRecord = [...records.values()].find(
+      (record) => record.manifest?.name === bundleMetadata.publicPackageName,
     );
-    const matches =
-      directMatches.length > 0 ? directMatches : (recordsByName.get(packageName) ?? []);
-    if (matches.length === 0) {
-      failures.push(`External bundle import is absent from full pnpm graph: ${packageName}`);
-      continue;
+    const directPublicDependencies = publicRecord
+      ? [...publicRecord.dependencyPaths]
+          .map((dependencyPath) => records.get(dependencyPath))
+          .filter(Boolean)
+      : [];
+    for (const specifier of bundleMetadata.externalImports) {
+      if (specifier.startsWith('.') || specifier.startsWith('node:')) continue;
+      const packageName = packageNameFromSpecifier(specifier);
+      const directMatches = directPublicDependencies.filter(
+        (record) => record.manifest?.name === packageName,
+      );
+      const matches =
+        directMatches.length > 0 ? directMatches : (recordsByName.get(packageName) ?? []);
+      if (matches.length === 0) {
+        failures.push(`External bundle import is absent from full pnpm graph: ${packageName}`);
+        continue;
+      }
+      externalRoots.push(...matches);
     }
-    externalRoots.push(...matches);
   }
 
   const pending = [...externalRoots];
@@ -417,7 +440,7 @@ function buildReport(packages) {
 
   return `# Dependency licenses
 
-This report is generated by \`pnpm check:licenses\` from the full installed pnpm graph, lockfile, and the actual \`@cp949/simple-html-editor-react\` bundle module evidence.
+This report is generated by \`pnpm check:licenses\` from the full installed pnpm graph, lockfile, and the actual \`@cp949/simple-html-editor-core\` and \`@cp949/simple-html-editor-react\` bundle module evidence.
 
 Allowed licenses: ${[...allowedLicenses].join(', ')}.
 
@@ -429,10 +452,10 @@ ${rows.join('\n')}
 
 async function check() {
   const options = parseArguments(process.argv.slice(2));
-  const [metadataSource, bundleMetadataSource, lockfile] = await Promise.all([
+  const [metadataSource, lockfile, ...bundleMetadataSources] = await Promise.all([
     options.metadata ? readFile(options.metadata, 'utf8') : loadPnpmMetadata(options.root),
-    readFile(options.bundleMetadata, 'utf8'),
     readFile(options.lockfile, 'utf8'),
+    ...options.bundleMetadata.map((metadataPath) => readFile(metadataPath, 'utf8')),
   ]);
   let metadata;
   try {
@@ -448,9 +471,26 @@ async function check() {
   const optionalDependenciesBySnapshot = parsePnpmOptionalDependencyEdges(lockfile);
   const records = collectGraph(metadata, optionalDependenciesBySnapshot);
   await loadGraphManifests(records);
-  const bundleMetadata = parseBundleMetadata(bundleMetadataSource);
-  await verifyBundleOutput(options.root, bundleMetadata);
-  const selection = selectAuditedRecords(options.root, records, bundleMetadata);
+  const bundleMetadataEntries = bundleMetadataSources.map((source) => {
+    const bundleMetadata = parseBundleMetadata(source);
+    return {
+      ...bundleMetadata,
+      publicPackageName: publicPackageNameForBundle(bundleMetadata),
+    };
+  });
+  const evidencedPackages = new Set(
+    bundleMetadataEntries.map(({ publicPackageName }) => publicPackageName),
+  );
+  if (
+    evidencedPackages.size !== ownedWorkspacePackages.size ||
+    [...ownedWorkspacePackages].some((packageName) => !evidencedPackages.has(packageName))
+  ) {
+    throw new Error('Bundle metadata must cover core and React public packages');
+  }
+  await Promise.all(
+    bundleMetadataEntries.map((bundleMetadata) => verifyBundleOutput(options.root, bundleMetadata)),
+  );
+  const selection = selectAuditedRecords(options.root, records, bundleMetadataEntries);
   const inspection = inspectSelectedPackages(selection, lockfile);
   if (inspection.packages.length === 0 && inspection.failures.length === 0) {
     throw new Error('Bundle and external runtime metadata did not select packages');

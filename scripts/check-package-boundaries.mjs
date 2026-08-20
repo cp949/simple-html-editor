@@ -40,6 +40,12 @@ function isForbiddenTypeDependency(specifier) {
   return specifier.startsWith('@tiptap/') || specifier.startsWith('prosemirror-');
 }
 
+function packageNameFromSpecifier(specifier) {
+  return specifier.startsWith('@')
+    ? specifier.split('/').slice(0, 2).join('/')
+    : specifier.split('/')[0];
+}
+
 function declarationSpecifiers(sourceFile) {
   const specifiers = sourceFile.typeReferenceDirectives.map(({ fileName }) => fileName);
 
@@ -106,9 +112,12 @@ function collectTypeEntrypoints(packageJson) {
   return [...entrypoints];
 }
 
-async function inspectPublicDeclarations() {
-  const distDirectory = path.join(root, 'packages/react/dist');
-  const packageJson = await readJson('packages/react/dist/package.json');
+async function inspectPublicDeclarations({
+  kind,
+  distDirectory,
+  distManifest: packageJson,
+  sourceManifest,
+}) {
   const pending = collectTypeEntrypoints(packageJson).map((entrypoint) =>
     path.resolve(distDirectory, entrypoint),
   );
@@ -139,13 +148,20 @@ async function inspectPublicDeclarations() {
     const relativePath = path.relative(distDirectory, declarationPath);
 
     for (const specifier of declarationSpecifiers(sourceFile)) {
-      if (isForbiddenTypeDependency(specifier)) {
+      if (kind === 'react' && isForbiddenTypeDependency(specifier)) {
         failures.push(
-          `Public declaration ${relativePath} imports bundled dependency: ${specifier}`,
+          `React public declaration ${relativePath} exposes implementation type: ${specifier}`,
         );
       } else if (specifier.startsWith('.')) {
         const resolved = await resolveRelativeDeclaration(declarationPath, specifier);
         if (resolved) pending.push(resolved);
+      } else if (
+        kind === 'core' &&
+        !Object.hasOwn(sourceManifest.dependencies ?? {}, packageNameFromSpecifier(specifier))
+      ) {
+        failures.push(
+          `Core public declaration ${relativePath} imports undeclared package: ${specifier}`,
+        );
       }
     }
     for (const reference of sourceFile.referencedFiles) {
@@ -168,6 +184,24 @@ async function check() {
     packages.map(([label, , expectedName]) => [expectedName, label]),
   );
   const failures = [];
+  const publicPackages = [
+    {
+      kind: 'core',
+      label: 'Core',
+      expectedName: '@cp949/simple-html-editor-core',
+      sourceManifest: manifests.get('core'),
+      distManifest: await readJson('packages/core/dist/package.json'),
+      distDirectory: path.join(root, 'packages/core/dist'),
+    },
+    {
+      kind: 'react',
+      label: 'React',
+      expectedName: '@cp949/simple-html-editor-react',
+      sourceManifest: manifests.get('react'),
+      distManifest: await readJson('packages/react/dist/package.json'),
+      distDirectory: path.join(root, 'packages/react/dist'),
+    },
+  ];
 
   // optionalDependencies도 production install graph에 포함되므로 dependencies와 함께 거부한다.
   // private root의 devDependencies는 workspace orchestration/tooling 용도로 계속 허용한다.
@@ -185,6 +219,36 @@ async function check() {
     if (manifests.get(label).name !== expectedName) {
       failures.push(`${path.dirname(manifestPath)} package name must be ${expectedName}`);
     }
+  }
+
+  for (const publicPackage of publicPackages) {
+    const { label, expectedName, sourceManifest, distManifest } = publicPackage;
+    if (sourceManifest.version !== rootManifest.version) {
+      failures.push(
+        `${label} source version must equal root version ${rootManifest.version}: ${sourceManifest.version}`,
+      );
+    }
+    if (sourceManifest.private === true) failures.push(`${label} source package must be public`);
+    if (sourceManifest.publishConfig?.access !== 'public') {
+      failures.push(`${label} source publishConfig.access must be public`);
+    }
+    if (distManifest.name !== expectedName) {
+      failures.push(`${label} dist package name must be ${expectedName}`);
+    }
+    if (distManifest.version !== rootManifest.version) {
+      failures.push(
+        `${label} dist version must equal root version ${rootManifest.version}: ${distManifest.version}`,
+      );
+    }
+    if (distManifest.private === true) failures.push(`${label} dist package must be public`);
+    if (distManifest.publishConfig?.access !== 'public') {
+      failures.push(`${label} dist publishConfig.access must be public`);
+    }
+  }
+
+  const reactDistManifest = publicPackages.find(({ kind }) => kind === 'react').distManifest;
+  if (reactDistManifest.dependencies?.['@cp949/simple-html-editor-core'] !== rootManifest.version) {
+    failures.push(`React dist core dependency must equal ${rootManifest.version}`);
   }
 
   const publicManifest = manifests.get('react');
@@ -222,7 +286,9 @@ async function check() {
     if (!observedEdges.has(edge)) failures.push(`Missing package edge: ${edge}`);
   }
 
-  failures.push(...(await inspectPublicDeclarations()));
+  for (const publicPackage of publicPackages) {
+    failures.push(...(await inspectPublicDeclarations(publicPackage)));
+  }
 
   if (failures.length > 0) {
     throw new Error(failures.join('\n'));
