@@ -1,6 +1,6 @@
 {
   "name": "@cp949/simple-html-editor-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "description": "React에 의존하지 않는 HTML 편집기 정책과 Tiptap extension 집합",

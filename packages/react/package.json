@@ -1,6 +1,6 @@
 {
   "name": "@cp949/simple-html-editor-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "description": "서버 HTML을 불러와 편집하고 정규화 HTML로 돌려주는 React 제어형 WYSIWYG 편집기",

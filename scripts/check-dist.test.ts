@@ -1,9 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { assertDistFileSet, assertReactBundleBoundary, checkDist } from './check-dist.mjs';
+
+// 픽스처가 release version을 하드코딩하면 버전 범프마다 깨지므로 check-dist.mjs처럼 root manifest에서 읽는다.
+const releaseVersion: string = JSON.parse(await readFile(resolve('package.json'), 'utf8')).version;
 
 const requiredFiles = [
   'index.js',
@@ -33,7 +36,7 @@ async function createFixture(): Promise<string> {
 
 async function createValidDistFixture(
   indexJavaScript: string,
-  { coreVersion = '0.1.0', version = '0.1.0' } = {},
+  { coreVersion = releaseVersion, version = releaseVersion } = {},
 ): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'simple-html-editor-valid-dist-'));
   await Promise.all([
@@ -86,7 +89,7 @@ async function createValidCoreDistFixture(): Promise<string> {
           join(directory, file),
           JSON.stringify({
             name: '@cp949/simple-html-editor-core',
-            version: '0.1.0',
+            version: releaseVersion,
             type: 'module',
             license: 'MIT',
             description: 'HTML 편집기 정책과 extension 집합',
@@ -196,7 +199,7 @@ describe('core dist 계약', () => {
 
 test('React dist는 자신의 version과 다른 core dependency를 거부한다', async () => {
   const directory = await createValidDistFixture('export const value = 1\n', {
-    coreVersion: '0.1.1',
+    coreVersion: '0.0.0-mismatch',
   });
 
   try {
