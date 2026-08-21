@@ -6,7 +6,9 @@ import {
   assertReleaseVersions,
   displayWidth,
   formatStatusRow,
+  formatTagMessage,
   parsePublishArguments,
+  planTagPush,
 } from '../publish-packages.mjs';
 
 test('인자가 없으면 대화형 메뉴를 선택한다', () => {
@@ -80,4 +82,61 @@ test('배포된 React의 core dependency가 exact version이 아니면 거부한
   assert.doesNotThrow(() =>
     assertPublishedDependency({ '@cp949/simple-html-editor-core': '0.1.0' }, '0.1.0'),
   );
+});
+
+test('버전 태그 메시지에 배포한 두 패키지를 기록한다', () => {
+  assert.equal(
+    formatTagMessage('0.2.0'),
+    'v0.2.0\n\n@cp949/simple-html-editor-core@0.2.0\n@cp949/simple-html-editor-react@0.2.0',
+  );
+});
+
+// 태그는 배포한 커밋의 기록이므로 작업 트리가 커밋 상태와 다르면 만들지 않는다.
+test('작업 트리가 깨끗하지 않으면 태그 푸시를 중단한다', () => {
+  const plan = planTagPush({
+    version: '0.2.0',
+    workingTreeDirty: true,
+    tagCommit: null,
+    headCommit: 'abc1234',
+  });
+
+  assert.equal(plan.action, 'abort');
+  assert.match(plan.reason, /작업 트리가 깨끗하지 않습니다/);
+});
+
+test('태그가 없으면 생성과 push를 계획한다', () => {
+  assert.deepEqual(
+    planTagPush({
+      version: '0.2.0',
+      workingTreeDirty: false,
+      tagCommit: null,
+      headCommit: 'abc1234',
+    }),
+    { action: 'create-and-push', tagName: 'v0.2.0' },
+  );
+});
+
+// push 실패 후 재시도 경로: 이미 만든 태그를 다시 만들려 하지 않는다.
+test('태그가 이미 HEAD를 가리키면 push만 계획한다', () => {
+  assert.deepEqual(
+    planTagPush({
+      version: '0.2.0',
+      workingTreeDirty: false,
+      tagCommit: 'abc1234',
+      headCommit: 'abc1234',
+    }),
+    { action: 'push-only', tagName: 'v0.2.0' },
+  );
+});
+
+test('태그가 다른 커밋을 가리키면 중단한다', () => {
+  const plan = planTagPush({
+    version: '0.2.0',
+    workingTreeDirty: false,
+    tagCommit: 'def5678',
+    headCommit: 'abc1234',
+  });
+
+  assert.equal(plan.action, 'abort');
+  assert.match(plan.reason, /v0\.2\.0 태그가 이미 다른 커밋\(def5678\)을 가리킵니다/);
 });

@@ -49,6 +49,30 @@ export function assertReleaseVersions({ root, core, react }) {
   return root;
 }
 
+export function formatTagMessage(version) {
+  return `v${version}\n\n${corePackage}@${version}\n${reactPackage}@${version}`;
+}
+
+// 태그는 배포한 커밋의 기록이므로 작업 트리가 커밋 상태와 다르거나
+// 같은 이름의 태그가 다른 커밋을 가리키면 만들지 않는다.
+export function planTagPush({ version, workingTreeDirty, tagCommit, headCommit }) {
+  const tagName = `v${version}`;
+
+  if (workingTreeDirty) {
+    return {
+      action: 'abort',
+      reason: '작업 트리가 깨끗하지 않습니다. 배포한 커밋 상태로 정리한 뒤 다시 시도하세요.',
+    };
+  }
+  if (tagCommit === null) return { action: 'create-and-push', tagName };
+  if (tagCommit === headCommit) return { action: 'push-only', tagName };
+
+  return {
+    action: 'abort',
+    reason: `${tagName} 태그가 이미 다른 커밋(${tagCommit})을 가리킵니다. 태그를 직접 확인하세요.`,
+  };
+}
+
 export function assertPublishedDependency(dependencies, version) {
   const specifier = dependencies?.[corePackage];
 
@@ -133,6 +157,47 @@ function publishTarget(key, version, dryRun) {
   return true;
 }
 
+function pushVersionTag(version) {
+  const status = run('git', ['status', '--porcelain'], { capture: true });
+  const head = run('git', ['rev-parse', 'HEAD'], { capture: true });
+  const tag = run('git', ['rev-parse', '--verify', '--quiet', `refs/tags/v${version}^{commit}`], {
+    capture: true,
+  });
+  const plan = planTagPush({
+    version,
+    workingTreeDirty: status.status !== 0 || status.stdout.trim() !== '',
+    tagCommit: tag.status === 0 ? tag.stdout.trim() : null,
+    headCommit: head.stdout.trim(),
+  });
+
+  if (plan.action === 'abort') {
+    console.log(plan.reason);
+    return false;
+  }
+
+  if (plan.action === 'create-and-push') {
+    const created = run('git', ['tag', '-a', plan.tagName, '-m', formatTagMessage(version)]);
+
+    if (created.status !== 0) {
+      console.log(`${plan.tagName} 태그 생성에 실패했습니다.`);
+      return false;
+    }
+    console.log(`${plan.tagName} 태그를 HEAD에 만들었습니다.`);
+  } else {
+    console.log(`${plan.tagName} 태그가 이미 HEAD를 가리킵니다. push만 진행합니다.`);
+  }
+
+  const pushed = run('git', ['push', 'origin', plan.tagName]);
+
+  if (pushed.status !== 0) {
+    console.log(`태그 push에 실패했습니다. 재시도하세요: git push origin ${plan.tagName}`);
+    return false;
+  }
+
+  console.log(`origin에 ${plan.tagName} 태그를 push했습니다.`);
+  return true;
+}
+
 function reportPublished(version) {
   for (const key of ['core', 'react']) {
     const target = targets[key];
@@ -183,6 +248,7 @@ function printStatus(version, registryVersions, warnings) {
     ['5', 'registry 상태 새로고침', ''],
     ['6', '배포 결과 확인', 'version과 React의 core dependency'],
     ['7', '빌드', 'pnpm build'],
+    ['8', '버전 태그 붙여서 푸시', `git tag v${version} && git push origin v${version}`],
     ['q', '종료', ''],
   ];
 
@@ -235,6 +301,8 @@ async function runMenu(version) {
         reportPublished(version);
       } else if (choice === '7') {
         run('pnpm', ['build']);
+      } else if (choice === '8') {
+        pushVersionTag(version);
       } else {
         console.log(`알 수 없는 선택입니다: ${choice}`);
       }
