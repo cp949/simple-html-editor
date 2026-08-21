@@ -138,7 +138,7 @@ test('이미지를 drag resize하고 저장한 너비로 다시 불러온다', a
   const savedHtml = page.getByLabel('서버 저장 HTML');
   await expect(savedHtml).toContainText(/width="[2-9][0-9]{2}"/);
   await expect(savedHtml).not.toContainText('height="');
-  await expect(savedHtml).not.toContainText('editor-simple__image');
+  await expect(savedHtml).not.toContainText('simple-html-editor__image');
   const savedWidth = Math.round(resized?.width ?? 0);
 
   await editor.press('Control+End');

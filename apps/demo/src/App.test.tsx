@@ -122,14 +122,14 @@ describe('demo App', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: '서버에 저장' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: '서버에 저장' }));
     await waitFor(() => expect(getServerSnapshot()).toHaveTextContent('width="260"'));
-    expect(getServerSnapshot()).not.toHaveTextContent('editor-simple__image');
+    expect(getServerSnapshot()).not.toHaveTextContent('simple-html-editor__image');
 
     fireEvent.click(screen.getByRole('button', { name: 'intro fixture 불러오기' }));
     await waitFor(() => expect(editor).toHaveTextContent('음성인식(STT)은'));
     fireEvent.click(screen.getByRole('button', { name: '저장값 다시 불러오기' }));
 
     const reloadedImage = await screen.findByRole('img', { name: '크기 조절 demo 이미지' });
-    expect(reloadedImage.closest('.editor-simple__image')).toHaveStyle({ width: '260px' });
+    expect(reloadedImage.closest('.simple-html-editor__image')).toHaveStyle({ width: '260px' });
   });
 
   it.each([
@@ -177,7 +177,7 @@ describe('demo App', () => {
       fireEvent.click(screen.getByRole('button', { name: '저장값 다시 불러오기' }));
 
       const reloadedImage = await screen.findByRole('img', { name: '크기 조절 demo 이미지' });
-      expect(reloadedImage.closest('.editor-simple__image')).toHaveStyle({
+      expect(reloadedImage.closest('.simple-html-editor__image')).toHaveStyle({
         marginLeft: 'auto',
         marginRight: 'auto',
         width: '260px',

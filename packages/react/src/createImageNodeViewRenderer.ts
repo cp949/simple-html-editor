@@ -47,7 +47,7 @@ export function createImageNodeViewRenderer(): NodeViewRenderer {
     let dragSession: DragSession | null = null;
 
     const wrapper = document.createElement('span');
-    wrapper.className = 'editor-simple__image';
+    wrapper.className = 'simple-html-editor__image';
     wrapper.contentEditable = 'false';
 
     const image = document.createElement('img');
@@ -55,7 +55,7 @@ export function createImageNodeViewRenderer(): NodeViewRenderer {
 
     const handle = document.createElement('button');
     handle.type = 'button';
-    handle.className = 'editor-simple__image-resize-handle';
+    handle.className = 'simple-html-editor__image-resize-handle';
     handle.setAttribute('aria-label', '이미지 크기 조절');
     handle.contentEditable = 'false';
 
@@ -90,7 +90,7 @@ export function createImageNodeViewRenderer(): NodeViewRenderer {
         image.getBoundingClientRect().width > 0 &&
         editorContentWidth(view.dom) >= MIN_IMAGE_WIDTH;
 
-      wrapper.classList.toggle('editor-simple__image--selected', selectedNow);
+      wrapper.classList.toggle('simple-html-editor__image--selected', selectedNow);
 
       if (handleVisible && handle.parentNode !== wrapper) {
         wrapper.append(handle);

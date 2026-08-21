@@ -14,7 +14,8 @@ const config = {
     },
   ],
   webServer: {
-    command: 'pnpm --filter @cp949/editor-simple-demo dev --host 127.0.0.1 --port 4173 --force',
+    command:
+      'pnpm --filter @cp949/simple-html-editor-demo dev --host 127.0.0.1 --port 4173 --force',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false,
   },

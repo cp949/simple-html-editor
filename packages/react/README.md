@@ -105,20 +105,20 @@ toolbar는 편집기가 소유하며 외부 DOM으로 이동하지 않는다. �
 
 ## 스타일 조정
 
-최상위 요소는 `.editor-simple` 클래스를 사용하고 다음 CSS custom property를 읽는다.
+최상위 요소는 `.simple-html-editor` 클래스를 사용하고 다음 CSS custom property를 읽는다.
 
 | property | 기본값 |
 | --- | --- |
-| `--editor-simple-border-color` | `#d1d5db` |
-| `--editor-simple-background` | `#ffffff` |
-| `--editor-simple-foreground` | `#1f2937` |
-| `--editor-simple-min-height` | `16rem` |
-| `--editor-simple-max-height` | `32rem` |
+| `--simple-html-editor-border-color` | `#d1d5db` |
+| `--simple-html-editor-background` | `#ffffff` |
+| `--simple-html-editor-foreground` | `#1f2937` |
+| `--simple-html-editor-min-height` | `16rem` |
+| `--simple-html-editor-max-height` | `32rem` |
 
 ```css
 .post-editor {
-  --editor-simple-min-height: 24rem;
-  --editor-simple-border-color: #94a3b8;
+  --simple-html-editor-min-height: 24rem;
+  --simple-html-editor-border-color: #94a3b8;
 }
 ```
 

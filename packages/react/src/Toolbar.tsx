@@ -93,7 +93,7 @@ export function Toolbar({
   };
 
   return (
-    <div className="editor-simple__toolbar" role="toolbar" aria-label="서식 도구">
+    <div className="simple-html-editor__toolbar" role="toolbar" aria-label="서식 도구">
       <ToolbarButton
         label="문단"
         active={editor.isActive('paragraph')}

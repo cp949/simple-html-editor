@@ -26,7 +26,7 @@ const coreRequiredFiles = [
 ] as const;
 
 async function createFixture(): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), 'editor-simple-dist-'));
+  const directory = await mkdtemp(join(tmpdir(), 'simple-html-editor-dist-'));
   await Promise.all(requiredFiles.map((file) => writeFile(join(directory, file), '')));
   return directory;
 }
@@ -35,7 +35,7 @@ async function createValidDistFixture(
   indexJavaScript: string,
   { coreVersion = '0.1.0', version = '0.1.0' } = {},
 ): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), 'editor-simple-valid-dist-'));
+  const directory = await mkdtemp(join(tmpdir(), 'simple-html-editor-valid-dist-'));
   await Promise.all([
     writeFile(join(directory, 'index.js'), indexJavaScript),
     writeFile(join(directory, 'index.d.ts'), 'export declare const value: unknown\n'),

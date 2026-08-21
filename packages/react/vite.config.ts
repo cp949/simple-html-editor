@@ -22,13 +22,13 @@ export default defineConfig({
       external: externalPackages,
     }),
     {
-      name: 'editor-simple-styles',
+      name: 'simple-html-editor-styles',
       transform(code, id) {
         return id === entryFile ? `import './styles.css'\n${code}` : undefined;
       },
     },
     {
-      name: 'editor-simple-es2019-syntax',
+      name: 'simple-html-editor-es2019-syntax',
       enforce: 'post',
       async generateBundle(_options, bundle) {
         for (const output of Object.values(bundle)) {
@@ -48,7 +48,7 @@ export default defineConfig({
       },
     },
     {
-      name: 'editor-simple-bundle-metadata',
+      name: 'simple-html-editor-bundle-metadata',
       enforce: 'post',
       async generateBundle(_options, bundle) {
         const modules = new Set<string>();
@@ -70,7 +70,7 @@ export default defineConfig({
           }
         }
 
-        if (!entryChunk) throw new Error('editor-simple entry chunk가 없습니다.');
+        if (!entryChunk) throw new Error('simple-html-editor entry chunk가 없습니다.');
         await mkdir(resolve(bundleMetadataFile, '..'), { recursive: true });
         await writeFile(
           bundleMetadataFile,

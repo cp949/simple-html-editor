@@ -1,44 +1,44 @@
-.editor-simple {
-  --editor-simple-border-color: #d1d5db;
-  --editor-simple-background: #ffffff;
-  --editor-simple-foreground: #1f2937;
-  --editor-simple-min-height: 16rem;
-  --editor-simple-max-height: 32rem;
+.simple-html-editor {
+  --simple-html-editor-border-color: #d1d5db;
+  --simple-html-editor-background: #ffffff;
+  --simple-html-editor-foreground: #1f2937;
+  --simple-html-editor-min-height: 16rem;
+  --simple-html-editor-max-height: 32rem;
 
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--editor-simple-border-color);
+  border: 1px solid var(--simple-html-editor-border-color);
   border-radius: 0.5rem;
-  background: var(--editor-simple-background);
-  color: var(--editor-simple-foreground);
+  background: var(--simple-html-editor-background);
+  color: var(--simple-html-editor-foreground);
 }
 
-.editor-simple__toolbar {
+.simple-html-editor__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   margin: -0.125rem;
   padding: 0.625rem;
-  border-bottom: 1px solid var(--editor-simple-border-color);
+  border-bottom: 1px solid var(--simple-html-editor-border-color);
   background: #f3f4f6;
 }
 
-.editor-simple__toolbar > * {
+.simple-html-editor__toolbar > * {
   margin: 0.125rem;
 }
 
-.editor-simple__toolbar button,
-.editor-simple__toolbar input {
+.simple-html-editor__toolbar button,
+.simple-html-editor__toolbar input {
   min-height: 2rem;
-  border: 1px solid var(--editor-simple-border-color);
+  border: 1px solid var(--simple-html-editor-border-color);
   border-radius: 0.25rem;
-  background: var(--editor-simple-background);
+  background: var(--simple-html-editor-background);
   color: inherit;
   cursor: pointer;
 }
 
-.editor-simple__toolbar button {
+.simple-html-editor__toolbar button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -46,60 +46,60 @@
 }
 
 /* 아이콘 전용 버튼이 텍스트 버튼과 같은 높이를 유지하도록 크기를 고정한다. */
-.editor-simple__toolbar button svg {
+.simple-html-editor__toolbar button svg {
   display: block;
   width: 1.125rem;
   height: 1.125rem;
 }
 
-.editor-simple__toolbar button[aria-pressed="true"] {
+.simple-html-editor__toolbar button[aria-pressed="true"] {
   background: #e5e7eb;
 }
 
-.editor-simple__toolbar button:disabled,
-.editor-simple__toolbar input:disabled {
+.simple-html-editor__toolbar button:disabled,
+.simple-html-editor__toolbar input:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.editor-simple button:focus,
-.editor-simple input:focus,
-.editor-simple__content [contenteditable="true"]:focus {
+.simple-html-editor button:focus,
+.simple-html-editor input:focus,
+.simple-html-editor__content [contenteditable="true"]:focus {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
 
-.editor-simple button:focus-visible,
-.editor-simple input:focus-visible,
-.editor-simple__content [contenteditable="true"]:focus-visible {
+.simple-html-editor button:focus-visible,
+.simple-html-editor input:focus-visible,
+.simple-html-editor__content [contenteditable="true"]:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
 
-.editor-simple button:focus:not(:focus-visible),
-.editor-simple input:focus:not(:focus-visible),
-.editor-simple__content [contenteditable="true"]:focus:not(:focus-visible) {
+.simple-html-editor button:focus:not(:focus-visible),
+.simple-html-editor input:focus:not(:focus-visible),
+.simple-html-editor__content [contenteditable="true"]:focus:not(:focus-visible) {
   outline: none;
 }
 
-.editor-simple__content {
+.simple-html-editor__content {
   box-sizing: border-box;
-  min-height: var(--editor-simple-min-height);
-  max-height: var(--editor-simple-max-height);
+  min-height: var(--simple-html-editor-min-height);
+  max-height: var(--simple-html-editor-max-height);
   overflow-y: auto;
   padding: 1rem;
   line-height: 1.6;
 }
 
-.editor-simple__content :first-child {
+.simple-html-editor__content :first-child {
   margin-top: 0;
 }
 
-.editor-simple__content :last-child {
+.simple-html-editor__content :last-child {
   margin-bottom: 0;
 }
 
-.editor-simple__content p.is-editor-empty:first-child::before {
+.simple-html-editor__content p.is-editor-empty:first-child::before {
   float: left;
   height: 0;
   color: #6b7280;
@@ -107,43 +107,43 @@
   pointer-events: none;
 }
 
-.editor-simple__content ul,
-.editor-simple__content ol {
+.simple-html-editor__content ul,
+.simple-html-editor__content ol {
   padding-left: 1.5rem;
 }
 
-.editor-simple__content ul {
+.simple-html-editor__content ul {
   list-style: disc;
 }
 
-.editor-simple__content ol {
+.simple-html-editor__content ol {
   list-style: decimal;
 }
 
-.editor-simple__content a {
+.simple-html-editor__content a {
   color: #0047b2;
   text-decoration: underline;
 }
 
-.editor-simple__image {
+.simple-html-editor__image {
   position: relative;
   display: block;
   box-sizing: border-box;
 }
 
-.editor-simple__image > img {
+.simple-html-editor__image > img {
   display: block;
   width: 100%;
   max-width: 100%;
   height: auto;
 }
 
-.editor-simple__image--selected {
+.simple-html-editor__image--selected {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-.editor-simple__image-resize-handle {
+.simple-html-editor__image-resize-handle {
   position: absolute;
   right: -0.5rem;
   bottom: -0.5rem;
@@ -159,19 +159,19 @@
   touch-action: none;
 }
 
-.editor-simple__content table {
+.simple-html-editor__content table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.editor-simple__content th,
-.editor-simple__content td {
-  border: 1px solid var(--editor-simple-border-color);
+.simple-html-editor__content th,
+.simple-html-editor__content td {
+  border: 1px solid var(--simple-html-editor-border-color);
   padding: 0.5rem;
   text-align: left;
   vertical-align: top;
 }
 
-.editor-simple__content th {
+.simple-html-editor__content th {
   background: #f3f4f6;
 }

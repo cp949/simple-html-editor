@@ -129,10 +129,13 @@ describe('HtmlEditor', () => {
 
     await screen.findByText('스타일 대상');
 
-    expect(container.querySelector('.editor-simple.소비자-스타일')).toBeInTheDocument();
-    expect(container.querySelector('.editor-simple__toolbar')).toHaveAttribute('role', 'toolbar');
+    expect(container.querySelector('.simple-html-editor.소비자-스타일')).toBeInTheDocument();
+    expect(container.querySelector('.simple-html-editor__toolbar')).toHaveAttribute(
+      'role',
+      'toolbar',
+    );
     expect(
-      container.querySelector('.editor-simple__content [contenteditable="true"]'),
+      container.querySelector('.simple-html-editor__content [contenteditable="true"]'),
     ).toBeInTheDocument();
   });
 
@@ -245,12 +248,12 @@ describe('HtmlEditor', () => {
     fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 7 });
 
     expect(screen.getByRole('button', { name: '이미지 크기 조절' })).toBeInTheDocument();
-    expect(container.querySelector('.editor-simple__image--selected')).toContainElement(image);
+    expect(container.querySelector('.simple-html-editor__image--selected')).toContainElement(image);
 
     const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
     enablePointerCapture(handle);
     const wrapper = requireElement(
-      image.closest<HTMLElement>('.editor-simple__image'),
+      image.closest<HTMLElement>('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
     onChange.mockClear();
@@ -288,7 +291,9 @@ describe('HtmlEditor', () => {
     vi.spyOn(image, 'getBoundingClientRect').mockReturnValue(rect(200));
 
     fireEvent.pointerDown(image, { button: 0, isPrimary: true, pointerId: 7 });
-    expect(image.closest('.editor-simple__image')).toHaveClass('editor-simple__image--selected');
+    expect(image.closest('.simple-html-editor__image')).toHaveClass(
+      'simple-html-editor__image--selected',
+    );
     expect(screen.queryByRole('button', { name: '이미지 크기 조절' })).not.toBeInTheDocument();
 
     fireEvent.load(image);
@@ -319,7 +324,7 @@ describe('HtmlEditor', () => {
     const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
     const { setPointerCapture } = enablePointerCapture(handle);
     const wrapper = requireElement(
-      image.closest('.editor-simple__image'),
+      image.closest('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
     onChange.mockClear();
@@ -346,7 +351,7 @@ describe('HtmlEditor', () => {
     expect(savedHtml).toContain('margin-left: auto');
     expect(savedHtml).toContain('margin-right: auto');
     expect(savedHtml).not.toContain('height="');
-    expect(savedHtml).not.toContain('editor-simple__image');
+    expect(savedHtml).not.toContain('simple-html-editor__image');
   });
 
   it('image 오른쪽 정렬은 NodeView margin과 저장 HTML에서 기존 width와 attribute를 보존한다', async () => {
@@ -364,7 +369,7 @@ describe('HtmlEditor', () => {
       name: '오른쪽 정렬 대상',
     })) as HTMLImageElement;
     const wrapper = requireElement(
-      image.closest<HTMLElement>('.editor-simple__image'),
+      image.closest<HTMLElement>('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
 
@@ -375,7 +380,7 @@ describe('HtmlEditor', () => {
 
     await waitFor(() => expect(wrapper).toHaveStyle({ width: '200px' }));
     expect(wrapper).toHaveStyle({ marginLeft: 'auto', marginRight: '0px' });
-    expect(wrapper).toHaveClass('editor-simple__image--selected');
+    expect(wrapper).toHaveClass('simple-html-editor__image--selected');
     expect(screen.getByRole('button', { name: '이미지 크기 조절' })).toBeInTheDocument();
     await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
 
@@ -423,7 +428,7 @@ describe('HtmlEditor', () => {
     render(<HtmlEditor value={savedHtml} onChange={vi.fn()} />);
     const restoredImage = await screen.findByRole('img', { name: '순서 교환 대상' });
     const restoredWrapper = requireElement(
-      restoredImage.closest<HTMLElement>('.editor-simple__image'),
+      restoredImage.closest<HTMLElement>('.simple-html-editor__image'),
       '저장 후 image NodeView wrapper',
     );
 
@@ -689,7 +694,7 @@ describe('HtmlEditor', () => {
     const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
     enablePointerCapture(handle);
     const wrapper = requireElement(
-      image.closest('.editor-simple__image'),
+      image.closest('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
     onChange.mockClear();
@@ -771,7 +776,7 @@ describe('HtmlEditor', () => {
     const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
     enablePointerCapture(handle);
     const wrapper = requireElement(
-      image.closest('.editor-simple__image'),
+      image.closest('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
     onChange.mockClear();
@@ -805,7 +810,7 @@ describe('HtmlEditor', () => {
     const handle = screen.getByRole('button', { name: '이미지 크기 조절' });
     enablePointerCapture(handle);
     const wrapper = requireElement(
-      image.closest('.editor-simple__image'),
+      image.closest('.simple-html-editor__image'),
       'image NodeView wrapper',
     );
     onChange.mockClear();
@@ -833,7 +838,7 @@ describe('HtmlEditor', () => {
     fireEvent.pointerDown(nextImage, { button: 0, isPrimary: true, pointerId: 32 });
     const nextHandle = await screen.findByRole('button', { name: '이미지 크기 조절' });
     const nextWrapper = requireElement(
-      nextHandle.closest<HTMLElement>('.editor-simple__image'),
+      nextHandle.closest<HTMLElement>('.simple-html-editor__image'),
       '다시 선택한 image NodeView wrapper',
     );
     enablePointerCapture(nextHandle);

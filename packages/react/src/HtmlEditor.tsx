@@ -109,12 +109,12 @@ export const HtmlEditor = forwardRef<HtmlEditorHandle, HtmlEditorProps>(function
   }, [editor, value]);
 
   return (
-    <div className={['editor-simple', className].filter(Boolean).join(' ')}>
+    <div className={['simple-html-editor', className].filter(Boolean).join(' ')}>
       {editor ? <Toolbar editor={editor} readOnly={readOnly} onPickImage={pickImage} /> : null}
       {imageError ? <p role="status">{imageError}</p> : null}
       <EditorContent
         editor={editor}
-        className="editor-simple__content"
+        className="simple-html-editor__content"
         onPasteCapture={(event) => {
           handlePaste(event.nativeEvent);
         }}
